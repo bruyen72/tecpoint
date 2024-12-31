@@ -313,77 +313,6 @@ def admin_logout():
     session.pop('admin_logged_in', None)
     flash('Logout realizado com sucesso!')
     return redirect(url_for('admin_login'))
-
-@app.route('/enviar-contato-site', methods=['POST'])
-def enviar_contato_site():
-    try:
-        # Recebe os dados do formulário
-        nome = request.form.get('name', '').strip()
-        email = request.form.get('email', '').strip()
-        telefone = request.form.get('phone', '').strip()
-        mensagem = request.form.get('message', '').strip()
-        data = datetime.now().strftime('%d/%m/%Y às %H:%M')
-
-        # Validação básica
-        if not nome or not email or not mensagem:
-            return jsonify({'error': 'Preencha todos os campos obrigatórios'}), 400
-
-        # Texto plano para o email
-        text_content = f"""
-NOVA MENSAGEM DO SITE
-
-Dados do Cliente:
-Nome: {nome}
-Email: {email}
-Telefone: {telefone}
-
-Mensagem:
-{mensagem}
-
-Recebido em {data}"""
-
-        # Cria a mensagem de email
-        msg = MIMEMultipart('alternative')
-        msg['Subject'] = 'Nova Mensagem - Site TecPoint'
-        msg['From'] = formataddr(("TecPoint Soluções", SMTP_USERNAME))
-        msg['To'] = SMTP_USERNAME
-        msg.add_header('Reply-To', email)
-
-        # Primeiro a versão texto
-        msg.attach(MIMEText(text_content, 'plain', 'utf-8'))
-
-        # Depois a versão HTML
-        html_content = f"""
-        <html>
-        <body style="font-family: Arial, sans-serif;">
-            <h2 style="color: #00A859;">Nova Mensagem do Site</h2>
-            <div style="margin: 20px 0;">
-                <h3>Dados do Cliente</h3>
-                <p><strong>Nome:</strong> {nome}</p>
-                <p><strong>Email:</strong> {email}</p>
-                <p><strong>Telefone:</strong> {telefone}</p>
-            </div>
-            <div style="margin: 20px 0;">
-                <h3>Mensagem:</h3>
-                <p>{mensagem}</p>
-            </div>
-            <p style="color: #666; font-style: italic;">Recebido em {data}</p>
-        </body>
-        </html>
-        """
-        msg.attach(MIMEText(html_content, 'html', 'utf-8'))
-
-        # Envia o email
-        with smtplib.SMTP_SSL(SMTP_SERVER, SMTP_PORT) as server:
-            server.login(SMTP_USERNAME, SMTP_PASSWORD)
-            server.send_message(msg)
-
-        return jsonify({'message': 'Mensagem enviada com sucesso!'}), 200
-
-    except Exception as e:
-        print(f"Erro ao enviar mensagem: {e}")
-        return jsonify({'error': 'Erro ao enviar mensagem'}), 500
-
 @app.route('/admin/produtos/adicionar', methods=['GET', 'POST'])
 @admin_required
 def admin_add_product():
@@ -528,7 +457,50 @@ def add_security_headers(response):
 # NOVA ROTA /enviar-contato IDENTICA AO /enviar-contato-site:
 # (Usando request.get_json(), corpo 'plain', e sem remover nenhum código.)
 # -----------------------------------------------------------------------
+@app.route('/enviar-contato-site', methods=['POST'])
+def enviar_contato_site():
+    try:
+        # Dados do formulário
+        nome = request.form.get('name', '').strip()
+        email = request.form.get('email', '').strip()
+        telefone = request.form.get('phone', '').strip()
+        mensagem = request.form.get('message', '').strip()
+        data = datetime.now().strftime('%d/%m/%Y às %H:%M')
 
+        # Criar email
+        msg = MIMEMultipart('related')
+        msg['Subject'] = 'Nova Mensagem - Site TecPoint'
+        msg['From'] = formataddr(("TecPoint Soluções", SMTP_USERNAME))
+        msg['To'] = SMTP_USERNAME
+        msg.add_header('Reply-To', email)
+
+        # Conteúdo do email
+        html_content = f"""
+NOVA MENSAGEM DO SITE
+
+Dados do Cliente:
+Nome: {nome}
+Email: {email}
+Telefone: {telefone}
+
+Mensagem:
+{mensagem}
+
+Recebido em {data}
+"""
+        part = MIMEText(html_content, 'plain', 'utf-8')
+        msg.attach(part)
+
+        # Enviar
+        with smtplib.SMTP_SSL(SMTP_SERVER, SMTP_PORT) as server:
+            server.login(SMTP_USERNAME, SMTP_PASSWORD)
+            server.send_message(msg)
+
+        return jsonify({'message': 'Mensagem enviada com sucesso!'}), 200
+
+    except Exception as e:
+        print(f'Erro ao enviar mensagem: {e}')
+        return jsonify({'error': 'Ocorreu um erro inesperado'}), 500
 # Logo após as definições de Product e Admin
 @app.before_first_request
 def init_database():
