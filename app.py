@@ -314,6 +314,56 @@ def admin_logout():
     flash('Logout realizado com sucesso!')
     return redirect(url_for('admin_login'))
 
+@app.route('/enviar-contato-site', methods=['POST'])
+def enviar_contato_site():
+    try:
+        dados = {
+            'nome': request.form.get('name', '').strip(),
+            'email': request.form.get('email', '').strip(),
+            'telefone': request.form.get('phone', '').strip(),
+            'mensagem': request.form.get('message', '').strip(),
+            'data': datetime.now().strftime('%d/%m/%Y às %H:%M')
+        }
+
+        # Mensagem para a TecPoint
+        msg_empresa = MIMEMultipart('related')
+        msg_empresa['Subject'] = 'Nova Mensagem - Site TecPoint'
+        msg_empresa['From'] = formataddr(("TecPoint Soluções", SMTP_USERNAME))
+        msg_empresa['To'] = SMTP_USERNAME
+        msg_empresa.add_header('Reply-To', dados['email'])
+
+        html_empresa = f"""
+        <html>
+        <body style="font-family: Arial, sans-serif;">
+            <h2 style="color: #00A859;">Nova Mensagem do Site</h2>
+            <div style="margin: 20px 0;">
+                <h3>Dados do Cliente</h3>
+                <p>
+                <strong>Nome:</strong> {dados['nome']}<br>
+                <strong>Email:</strong> {dados['email']}<br>
+                <strong>Telefone:</strong> {dados['telefone']}</p>
+            </div>
+            <div style="margin: 20px 0;">
+                <h3>Mensagem</h3>
+                <p>{dados['mensagem']}</p>
+            </div>
+            <p style="color: #666; font-style: italic;">Recebido em {dados['data']}</p>
+        </body>
+        </html>
+        """
+        msg_empresa.attach(MIMEText(html_empresa, 'html', 'utf-8'))
+
+        # Enviar usando SSL/TLS
+        with smtplib.SMTP_SSL('smtps.uhserver.com', 465) as server:
+            server.login(SMTP_USERNAME, SMTP_PASSWORD)
+            server.send_message(msg_empresa)
+
+        return jsonify({'message': 'Mensagem enviada com sucesso!'}), 200
+
+    except Exception as e:
+        print(f'Erro ao enviar mensagem: {e}')
+        return jsonify({'error': 'Ocorreu um erro inesperado'}), 500
+
 @app.route('/admin/produtos/adicionar', methods=['GET', 'POST'])
 @admin_required
 def admin_add_product():
