@@ -336,22 +336,36 @@ def enviar_contato_site():
         <html>
         <body style="font-family: Arial, sans-serif;">
             <h2 style="color: #00A859;">Nova Mensagem do Site</h2>
-            <div style="margin: 20px 0;">
-                <h3>Dados do Cliente</h3>
-                <p>
-                <strong>Nome:</strong> {dados['nome']}<br>
-                <strong>Email:</strong> {dados['email']}<br>
-                <strong>Telefone:</strong> {dados['telefone']}</p>
-            </div>
-            <div style="margin: 20px 0;">
-                <h3>Mensagem</h3>
-                <p>{dados['mensagem']}</p>
-            </div>
+            
+            <h3>Dados do Cliente</h3>
+            <p>Nome: {dados['nome']}</p>
+            <p>Email: {dados['email']}</p>
+            <p>Telefone: {dados['telefone']}</p>
+
+            <h3>Mensagem</h3>
+            <p>{dados['mensagem']}</p>
+
             <p style="color: #666; font-style: italic;">Recebido em {dados['data']}</p>
         </body>
         </html>
         """
         msg_empresa.attach(MIMEText(html_empresa, 'html', 'utf-8'))
+
+        # Criar também versão texto plano
+        text_content = f"""
+NOVA MENSAGEM DO SITE
+
+Dados do Cliente:
+Nome: {dados['nome']}
+Email: {dados['email']}
+Telefone: {dados['telefone']}
+
+Mensagem:
+{dados['mensagem']}
+
+Recebido em {dados['data']}
+"""
+        msg_empresa.attach(MIMEText(text_content, 'plain', 'utf-8'))
 
         # Enviar usando SSL/TLS
         with smtplib.SMTP_SSL('smtps.uhserver.com', 465) as server:
