@@ -328,15 +328,8 @@ def enviar_contato_site():
         if not nome or not email or not mensagem:
             return jsonify({'error': 'Preencha todos os campos obrigatórios'}), 400
 
-        # Criação do email
-        msg = MIMEMultipart()
-        msg['Subject'] = 'Nova Mensagem - Site TecPoint'
-        msg['From'] = formataddr(("TecPoint Soluções", SMTP_USERNAME))
-        msg['To'] = SMTP_USERNAME
-        msg.add_header('Reply-To', email)
-
-        # Conteúdo do email em texto plano
-        texto_plano = f"""
+        # Texto plano para o email
+        text_content = f"""
 NOVA MENSAGEM DO SITE
 
 Dados do Cliente:
@@ -347,33 +340,40 @@ Telefone: {telefone}
 Mensagem:
 {mensagem}
 
-Recebido em {data}
-"""
-        part1 = MIMEText(texto_plano, 'plain', 'utf-8')
-        msg.attach(part1)
+Recebido em {data}"""
 
-        # Conteúdo HTML
-        html = f"""
+        # Cria a mensagem de email
+        msg = MIMEMultipart('alternative')
+        msg['Subject'] = 'Nova Mensagem - Site TecPoint'
+        msg['From'] = formataddr(("TecPoint Soluções", SMTP_USERNAME))
+        msg['To'] = SMTP_USERNAME
+        msg.add_header('Reply-To', email)
+
+        # Primeiro a versão texto
+        msg.attach(MIMEText(text_content, 'plain', 'utf-8'))
+
+        # Depois a versão HTML
+        html_content = f"""
         <html>
         <body style="font-family: Arial, sans-serif;">
             <h2 style="color: #00A859;">Nova Mensagem do Site</h2>
-            
-            <h3>Dados do Cliente</h3>
-            <p><strong>Nome:</strong> {nome}</p>
-            <p><strong>Email:</strong> {email}</p>
-            <p><strong>Telefone:</strong> {telefone}</p>
-
-            <h3>Mensagem</h3>
-            <p>{mensagem}</p>
-
+            <div style="margin: 20px 0;">
+                <h3>Dados do Cliente</h3>
+                <p><strong>Nome:</strong> {nome}</p>
+                <p><strong>Email:</strong> {email}</p>
+                <p><strong>Telefone:</strong> {telefone}</p>
+            </div>
+            <div style="margin: 20px 0;">
+                <h3>Mensagem:</h3>
+                <p>{mensagem}</p>
+            </div>
             <p style="color: #666; font-style: italic;">Recebido em {data}</p>
         </body>
         </html>
         """
-        part2 = MIMEText(html, 'html', 'utf-8')
-        msg.attach(part2)
+        msg.attach(MIMEText(html_content, 'html', 'utf-8'))
 
-        # Envio do email
+        # Envia o email
         with smtplib.SMTP_SSL(SMTP_SERVER, SMTP_PORT) as server:
             server.login(SMTP_USERNAME, SMTP_PASSWORD)
             server.send_message(msg)
