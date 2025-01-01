@@ -17,37 +17,62 @@ from email.utils import formataddr
 from email.utils import formatdate
 
 
+# Inicialização do Flask
 app = Flask(
     __name__,
     static_folder='static',
-    static_url_path=''  # URL raiz para arquivos estáticos
+    static_url_path=''
 )
 
-# Configuração do diretório de uploads
-UPLOAD_FOLDER = os.path.join(os.getcwd(), 'static', 'uploads')
-
-# Configuração do diretório de uploads e banco de dados com detecção do ambiente
-if 'RENDER' in os.environ:  # Detecta ambiente Render
-    UPLOAD_FOLDER = '/tmp/uploads'  # Diretório temporário no Render
-    database_path = '/tmp/tecpoint.db'  # Banco de dados temporário
+# Configuração do ambiente e diretórios
+if 'RENDER' in os.environ:
+    UPLOAD_FOLDER = '/tmp/uploads'
+    METADATA_FILE = '/tmp/file_metadata.json'
 else:
-    UPLOAD_FOLDER = os.path.join(os.getcwd(), 'static', 'uploads')  # Diretório local
-    database_path = os.path.join(os.getcwd(), 'tecpoint.db')  # Banco local
+    UPLOAD_FOLDER = os.path.join(os.getcwd(), 'static', 'uploads')
+    METADATA_FILE = os.path.join(os.getcwd(), 'file_metadata.json')
 
-# Cria a pasta de uploads se ela não existir
+# Criar diretório de uploads
 try:
     os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 except OSError as e:
-    print(f"Erro ao criar o diretório de uploads: {e}")
+    print(f"Erro ao criar diretório de uploads: {e}")
 
-# Configuração do Flask e SQLAlchemy
+# Configurações básicas do Flask
 app.config.update(
-    SECRET_KEY=os.environ.get('SECRET_KEY', os.urandom(24)),  # Chave secreta para sessões
-    SQLALCHEMY_DATABASE_URI=f'sqlite:///{database_path}',  # Banco de dados
-    SQLALCHEMY_TRACK_MODIFICATIONS=False,  # Desabilita notificações de modificação
-    UPLOAD_FOLDER=UPLOAD_FOLDER,  # Define o diretório de uploads
-    MAX_CONTENT_LENGTH=50 * 1024 * 1024  # Limite de tamanho do upload (50 MB)
+    SECRET_KEY=os.urandom(24),
+    UPLOAD_FOLDER=UPLOAD_FOLDER,
+    MAX_CONTENT_LENGTH=50 * 1024 * 1024  # 50MB
 )
+
+# Funções auxiliares para metadados
+def save_file_metadata(filename, filesize):
+    metadata = load_metadata()
+    metadata[filename] = {
+        'upload_date': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+        'size': filesize
+    }
+    
+    try:
+        with open(METADATA_FILE, 'w') as f:
+            json.dump(metadata, f, indent=4)
+    except Exception as e:
+        print(f"Erro ao salvar metadados: {e}")
+
+def load_metadata():
+    try:
+        if os.path.exists(METADATA_FILE):
+            with open(METADATA_FILE, 'r') as f:
+                return json.load(f)
+    except Exception as e:
+        print(f"Erro ao carregar metadados: {e}")
+    return {}
+
+# Extensões permitidas
+ALLOWED_EXTENSIONS = {'pdf', 'png', 'jpg', 'jpeg', 'gif', 'doc', 'docx', 'txt'}
+
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 # Configurações de Email
 SMTP_SERVER = 'smtps.uhserver.com'
@@ -172,7 +197,7 @@ def json_loads_filter(json_string):
         return json.loads(json_string) if json_string else []
     except:
         return []
-    
+
 # Rotas básicas
 @app.route('/')
 def index():
@@ -203,48 +228,65 @@ def produto_detalhe(id):
         Product.id != product.id
     ).limit(3).all()
     return render_template('produto_detalhe.html', product=product, related_products=related_products)
-@app.route('/enviar-contato-site', methods=['POST'])
-def enviar_contato_site():
+
+@app.route('/enviar-cotacao', methods=['POST'])
+def enviar_cotacao():
     try:
-        user_name = request.form.get('name', '').strip()
-        user_email = request.form.get('email', '').strip()
-        phone = request.form.get('phone', '').strip()
-        message = request.form.get('message', '').strip()
+        dados = {
+            'nome': request.form.get('name', '').strip(),
+            'email': request.form.get('email', '').strip(),
+            'telefone': request.form.get('phone', '').strip(),
+            'produto': request.form.get('product_name', '').strip(),
+            'categoria': request.form.get('product_category', '').strip(),
+            'quantidade': request.form.get('quantity', '1').strip(),
+            'mensagem': request.form.get('message', '').strip(),
+            'data': datetime.now().strftime('%d/%m/%Y às %H:%M')
+        }
 
-        if not user_name or not user_email or not message:
-            return jsonify({'error': 'Todos os campos obrigatórios precisam ser preenchidos'}), 400
+        # Mensagem para a TecPoint
+        msg_empresa = MIMEMultipart('related')
+        msg_empresa['Subject'] = f'Nova Cotação - {dados["produto"]}'
+        msg_empresa['From'] = formataddr(("TecPoint Soluções", SMTP_USERNAME))
+        msg_empresa['To'] = SMTP_USERNAME
+        msg_empresa.add_header('Reply-To', dados['email'])
 
-        msg = MIMEText(f"""
-NOVA MENSAGEM DO SITE (FormData):
+        html_empresa = f"""
+        <html>
+        <body style="font-family: Arial, sans-serif;">
+            <h2 style="color: #00A859;">Nova Solicitação de Cotação</h2>
+            <div style="margin: 20px 0;">
+                <h3>Dados do Cliente</h3>
+                <p>
+                <strong>Nome:</strong> {dados['nome']}<br>
+                <strong>Email:</strong> {dados['email']}<br>
+                <strong>Telefone:</strong> {dados['telefone']}</p>
+            </div>
+            <div style="margin: 20px 0;">
+                <h3>Produto Solicitado</h3>
+                <p>
+                <strong>Produto:</strong> {dados['produto']}<br>
+                <strong>Categoria:</strong> {dados['categoria']}<br>
+                <strong>Quantidade:</strong> {dados['quantidade']}</p>
+            </div>
+            <div style="margin: 20px 0;">
+                <h3>Mensagem</h3>
+                <p>{dados['mensagem']}</p>
+            </div>
+            <p style="color: #666; font-style: italic;">Recebido em {dados['data']}</p>
+        </body>
+        </html>
+        """
+        msg_empresa.attach(MIMEText(html_empresa, 'html', 'utf-8'))
 
-Nome: {user_name}
-Email: {user_email}
-Telefone: {phone}
-
-Mensagem:
-{message}
-
---
-Enviado através do formulário (rota /enviar-contato-site)
-""", 'plain', 'utf-8')
-        
-        msg['Subject'] = 'Nova Mensagem - Site TecPoint'
-        msg['From'] = formataddr(("TecPoint Contato", SMTP_USERNAME))
-        msg['To'] = SMTP_USERNAME
-        msg.add_header('Reply-To', user_email)
-
-        with smtplib.SMTP_SSL(SMTP_SERVER, SMTP_PORT) as server:
-            server.ehlo()
+        # Enviar usando SSL/TLS
+        with smtplib.SMTP_SSL('smtps.uhserver.com', 465) as server:
             server.login(SMTP_USERNAME, SMTP_PASSWORD)
-            server.send_message(msg)
-        
-        return jsonify({'message': 'Mensagem enviada com sucesso!'}), 200
+            server.send_message(msg_empresa)
 
-    except smtplib.SMTPException as smtp_error:
-        print(f'Erro SMTP ao enviar email do site: {smtp_error}')
-        return jsonify({'error': 'Erro no envio de e-mail, tente novamente mais tarde'}), 500
+        return jsonify({'message': 'Cotação enviada com sucesso!'}), 200
+
     except Exception as e:
-        print(f'Erro geral: {e}')
+        print(f'Erro ao enviar cotação: {e}')
         return jsonify({'error': 'Ocorreu um erro inesperado'}), 500
 
 def is_valid_email(email):
@@ -296,6 +338,7 @@ def admin_logout():
     session.pop('admin_logged_in', None)
     flash('Logout realizado com sucesso!')
     return redirect(url_for('admin_login'))
+
 @app.route('/admin/produtos/adicionar', methods=['GET', 'POST'])
 @admin_required
 def admin_add_product():
@@ -440,6 +483,7 @@ def add_security_headers(response):
 # NOVA ROTA /enviar-contato IDENTICA AO /enviar-contato-site:
 # (Usando request.get_json(), corpo 'plain', e sem remover nenhum código.)
 # -----------------------------------------------------------------------
+
 # Logo após as definições de Product e Admin
 @app.before_first_request
 def init_database():
