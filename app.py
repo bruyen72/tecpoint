@@ -308,66 +308,6 @@ def save_failed_email(dados):
             f.write('\n')
     except Exception as e:
         print(f"Erro ao salvar email falho: {e}")
-@app.route('/enviar2-contato-site2', methods=['POST'])
-def enviar2_contato_site2():
-    try:
-        # Validar dados recebidos
-        dados = {
-            'nome': request.form.get('name', '').strip(),
-            'email': request.form.get('email', '').strip(),
-            'telefone': request.form.get('phone', '').strip(),
-            'mensagem': request.form.get('message', '').strip(),
-        }
-        
-        # Validar campos obrigatórios
-        campos_vazios = [k for k, v in dados.items() if not v and k != 'telefone']
-        if campos_vazios:
-            return jsonify({
-                'error': f'Campos obrigatórios não preenchidos: {", ".join(campos_vazios)}'
-            }), 400
-
-        # Email em texto plano
-        texto_email = f"""
-NOVA MENSAGEM DO SITE:
-
-Nome: {dados['nome']}
-Email: {dados['email']}
-Telefone: {dados['telefone']}
-
-Mensagem:
-{dados['mensagem']}
-
---
-Enviado em {datetime.now().strftime('%d/%m/%Y às %H:%M')}
-"""
-
-        # Criar mensagem
-        msg = MIMEText(texto_email, 'plain', 'utf-8')
-        msg['Subject'] = 'Nova Mensagem - Site TecPoint'
-        msg['From'] = formataddr(("TecPoint Contato", SMTP_USERNAME))
-        msg['To'] = SMTP_USERNAME
-        msg.add_header('Reply-To', dados['email'])
-
-        # Enviar email
-        try:
-            with smtplib.SMTP_SSL(SMTP_SERVER, SMTP_PORT) as server:
-                server.ehlo()
-                server.login(SMTP_USERNAME, SMTP_PASSWORD)
-                server.send_message(msg)
-                
-            return jsonify({'message': 'Mensagem enviada com sucesso!'}), 200
-            
-        except smtplib.SMTPException as e:
-            print(f'Erro SMTP: {e}')
-            # Salvar email para tentar reenviar depois
-            save_failed_email(dados)
-            return jsonify({
-                'error': 'Erro ao enviar email. Tente novamente mais tarde.'
-            }), 500
-
-    except Exception as e:
-        print(f'Erro ao processar contato: {e}')
-        return jsonify({'error': 'Erro interno do servidor'}), 500
 @app.route('/admin')
 @admin_required
 def admin_dashboard():
@@ -539,8 +479,66 @@ def add_security_headers(response):
     return response
 
 # ------------------------------------------------------------------------
-# NOVA ROTA /enviar-contato IDENTICA AO /enviar-contato-site:
-# (Usando request.get_json(), corpo 'plain', e sem remover nenhum código.)
+@app.route('/enviar-contato-site', methods=['POST'])
+def enviar_contato_site():
+    try:
+        # Validar dados recebidos
+        dados = {
+            'nome': request.form.get('name', '').strip(),
+            'email': request.form.get('email', '').strip(),
+            'telefone': request.form.get('phone', '').strip(),
+            'mensagem': request.form.get('message', '').strip(),
+        }
+        
+        # Validar campos obrigatórios
+        campos_vazios = [k for k, v in dados.items() if not v and k != 'telefone']
+        if campos_vazios:
+            return jsonify({
+                'error': f'Campos obrigatórios não preenchidos: {", ".join(campos_vazios)}'
+            }), 400
+
+        # Email em texto plano
+        texto_email = f"""
+NOVA MENSAGEM DO SITE:
+
+Nome: {dados['nome']}
+Email: {dados['email']}
+Telefone: {dados['telefone']}
+
+Mensagem:
+{dados['mensagem']}
+
+--
+Enviado em {datetime.now().strftime('%d/%m/%Y às %H:%M')}
+"""
+
+        # Criar mensagem
+        msg = MIMEText(texto_email, 'plain', 'utf-8')
+        msg['Subject'] = 'Nova Mensagem - Site TecPoint'
+        msg['From'] = formataddr(("TecPoint Contato", SMTP_USERNAME))
+        msg['To'] = SMTP_USERNAME
+        msg.add_header('Reply-To', dados['email'])
+
+        # Enviar email
+        try:
+            with smtplib.SMTP_SSL(SMTP_SERVER, SMTP_PORT) as server:
+                server.ehlo()
+                server.login(SMTP_USERNAME, SMTP_PASSWORD)
+                server.send_message(msg)
+                
+            return jsonify({'message': 'Mensagem enviada com sucesso!'}), 200
+            
+        except smtplib.SMTPException as e:
+            print(f'Erro SMTP: {e}')
+            # Salvar email para tentar reenviar depois
+            save_failed_email(dados)
+            return jsonify({
+                'error': 'Erro ao enviar email. Tente novamente mais tarde.'
+            }), 500
+
+    except Exception as e:
+        print(f'Erro ao processar contato: {e}')
+        return jsonify({'error': 'Erro interno do servidor'}), 500
 # -----------------------------------------------------------------------
 
 # Logo após as definições de Product e Admin
