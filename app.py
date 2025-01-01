@@ -203,7 +203,7 @@ def produto_detalhe(id):
         Product.id != product.id
     ).limit(3).all()
     return render_template('produto_detalhe.html', product=product, related_products=related_products)
-@app.route('/enviar-contato-site', methods=['POST'])
+@app.route('/enviar2-contato-site2', methods=['POST'])
 def enviar_contato_site():
     try:
         # Como o formulário está enviando FormData, usamos request.form
