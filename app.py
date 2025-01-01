@@ -172,7 +172,7 @@ def json_loads_filter(json_string):
         return json.loads(json_string) if json_string else []
     except:
         return []
-
+    
 # Rotas básicas
 @app.route('/')
 def index():
@@ -203,7 +203,43 @@ def produto_detalhe(id):
         Product.id != product.id
     ).limit(3).all()
     return render_template('produto_detalhe.html', product=product, related_products=related_products)
+@app.route('/enviar-contato-site', methods=['POST'])
+def enviar_contato_site():
+    try:
+        # Recebe dados
+        nome = request.form.get('name', '')
+        email = request.form.get('email', '')
+        telefone = request.form.get('phone', '')
+        mensagem = request.form.get('message', '')
 
+        # Cria email simples
+        msg = MIMEText(f"""
+NOVA MENSAGEM DO SITE
+
+Dados do Cliente:
+Nome: {nome}
+Email: {email}
+Telefone: {telefone}
+
+Mensagem:
+{mensagem}
+""")
+        
+        # Configura email
+        msg['Subject'] = 'Nova Mensagem - Site TecPoint'
+        msg['From'] = SMTP_USERNAME
+        msg['To'] = SMTP_USERNAME
+
+        # Envia
+        with smtplib.SMTP_SSL('smtps.uhserver.com', 465) as server:
+            server.login(SMTP_USERNAME, SMTP_PASSWORD)
+            server.send_message(msg)
+
+        return jsonify({'message': 'ok'}), 200
+
+    except Exception as e:
+        print(f'Erro: {e}')
+        return jsonify({'error': 'erro'}), 500
 @app.route('/enviar-cotacao', methods=['POST'])
 def enviar_cotacao():
     try:
@@ -457,50 +493,6 @@ def add_security_headers(response):
 # NOVA ROTA /enviar-contato IDENTICA AO /enviar-contato-site:
 # (Usando request.get_json(), corpo 'plain', e sem remover nenhum código.)
 # -----------------------------------------------------------------------
-@app.route('/enviar-contato-site', methods=['POST'])
-def enviar_contato_site():
-    try:
-        # Dados do formulário
-        nome = request.form.get('name', '').strip()
-        email = request.form.get('email', '').strip()
-        telefone = request.form.get('phone', '').strip()
-        mensagem = request.form.get('message', '').strip()
-        data = datetime.now().strftime('%d/%m/%Y às %H:%M')
-
-        # Criar email
-        msg = MIMEMultipart('related')
-        msg['Subject'] = 'Nova Mensagem - Site TecPoint'
-        msg['From'] = formataddr(("TecPoint Soluções", SMTP_USERNAME))
-        msg['To'] = SMTP_USERNAME
-        msg.add_header('Reply-To', email)
-
-        # Conteúdo do email
-        html_content = f"""
-NOVA MENSAGEM DO SITE
-
-Dados do Cliente:
-Nome: {nome}
-Email: {email}
-Telefone: {telefone}
-
-Mensagem:
-{mensagem}
-
-Recebido em {data}
-"""
-        part = MIMEText(html_content, 'plain', 'utf-8')
-        msg.attach(part)
-
-        # Enviar
-        with smtplib.SMTP_SSL(SMTP_SERVER, SMTP_PORT) as server:
-            server.login(SMTP_USERNAME, SMTP_PASSWORD)
-            server.send_message(msg)
-
-        return jsonify({'message': 'Mensagem enviada com sucesso!'}), 200
-
-    except Exception as e:
-        print(f'Erro ao enviar mensagem: {e}')
-        return jsonify({'error': 'Ocorreu um erro inesperado'}), 500
 # Logo após as definições de Product e Admin
 @app.before_first_request
 def init_database():
