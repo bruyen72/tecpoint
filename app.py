@@ -482,25 +482,56 @@ def add_security_headers(response):
 @app.route('/enviar-contato-site', methods=['POST'])
 def enviar_contato_site():
     try:
-        # Validar dados recebidos
         dados = {
             'nome': request.form.get('name', '').strip(),
             'email': request.form.get('email', '').strip(),
             'telefone': request.form.get('phone', '').strip(),
             'mensagem': request.form.get('message', '').strip(),
+            'data': datetime.now().strftime('%d/%m/%Y às %H:%M')
         }
         
-        # Validar campos obrigatórios
-        campos_vazios = [k for k, v in dados.items() if not v and k != 'telefone']
-        if campos_vazios:
-            return jsonify({
-                'error': f'Campos obrigatórios não preenchidos: {", ".join(campos_vazios)}'
-            }), 400
+        if not all([dados['nome'], dados['email'], dados['mensagem']]):
+            return jsonify({'error': 'Por favor, preencha todos os campos obrigatórios'}), 400
 
-        # Email em texto plano
-        texto_email = f"""
-NOVA MENSAGEM DO SITE:
+        html_content = f"""
+        <html>
+        <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+            <div style="background-color: #00A859; padding: 20px; text-align: center; border-radius: 8px 8px 0 0;">
+                <h2 style="color: white; margin: 0;">Nova Mensagem do Site</h2>
+            </div>
+            
+            <div style="background-color: #f9f9f9; padding: 20px; border-radius: 0 0 8px 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                <div style="margin-bottom: 20px;">
+                    <h3 style="color: #00A859; border-bottom: 2px solid #00A859; padding-bottom: 8px;">Dados do Cliente</h3>
+                    <p><strong>Nome:</strong> {dados['nome']}</p>
+                    <p><strong>Email:</strong> {dados['email']}</p>
+                    <p><strong>Telefone:</strong> {dados['telefone'] or 'Não informado'}</p>
+                </div>
 
+                <div style="margin-bottom: 20px;">
+                    <h3 style="color: #00A859; border-bottom: 2px solid #00A859; padding-bottom: 8px;">Mensagem</h3>
+                    <p style="white-space: pre-wrap;">{dados['mensagem']}</p>
+                </div>
+
+                <div style="text-align: center; color: #666; font-style: italic; margin-top: 20px; padding-top: 20px; border-top: 1px solid #eee;">
+                    Mensagem recebida em {dados['data']}
+                </div>
+            </div>
+        </body>
+        </html>
+        """
+
+        msg = MIMEMultipart('alternative')
+        msg['Subject'] = 'Nova Mensagem - Site TecPoint'
+        msg['From'] = formataddr(("TecPoint Soluções", SMTP_USERNAME))
+        msg['To'] = SMTP_USERNAME
+        msg.add_header('Reply-To', dados['email'])
+
+        # Versão texto
+        text_content = f"""
+NOVA MENSAGEM DO SITE
+
+Dados do Cliente:
 Nome: {dados['nome']}
 Email: {dados['email']}
 Telefone: {dados['telefone']}
@@ -508,37 +539,21 @@ Telefone: {dados['telefone']}
 Mensagem:
 {dados['mensagem']}
 
---
-Enviado em {datetime.now().strftime('%d/%m/%Y às %H:%M')}
+Recebido em {dados['data']}
 """
+        msg.attach(MIMEText(text_content, 'plain', 'utf-8'))
+        msg.attach(MIMEText(html_content, 'html', 'utf-8'))
 
-        # Criar mensagem
-        msg = MIMEText(texto_email, 'plain', 'utf-8')
-        msg['Subject'] = 'Nova Mensagem - Site TecPoint'
-        msg['From'] = formataddr(("TecPoint Contato", SMTP_USERNAME))
-        msg['To'] = SMTP_USERNAME
-        msg.add_header('Reply-To', dados['email'])
-
-        # Enviar email
-        try:
-            with smtplib.SMTP_SSL(SMTP_SERVER, SMTP_PORT) as server:
-                server.ehlo()
-                server.login(SMTP_USERNAME, SMTP_PASSWORD)
-                server.send_message(msg)
-                
-            return jsonify({'message': 'Mensagem enviada com sucesso!'}), 200
+        with smtplib.SMTP_SSL(SMTP_SERVER, SMTP_PORT) as server:
+            server.ehlo()
+            server.login(SMTP_USERNAME, SMTP_PASSWORD)
+            server.send_message(msg)
             
-        except smtplib.SMTPException as e:
-            print(f'Erro SMTP: {e}')
-            # Salvar email para tentar reenviar depois
-            save_failed_email(dados)
-            return jsonify({
-                'error': 'Erro ao enviar email. Tente novamente mais tarde.'
-            }), 500
+        return jsonify({'message': 'Mensagem enviada com sucesso!'}), 200
 
     except Exception as e:
-        print(f'Erro ao processar contato: {e}')
-        return jsonify({'error': 'Erro interno do servidor'}), 500
+        print(f'Erro: {e}')
+        return jsonify({'error': 'Erro ao enviar mensagem'}), 500
 # -----------------------------------------------------------------------
 
 # Logo após as definições de Product e Admin
