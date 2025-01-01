@@ -308,8 +308,8 @@ def save_failed_email(dados):
             f.write('\n')
     except Exception as e:
         print(f"Erro ao salvar email falho: {e}")
-@app.route('/enviar-contato-site', methods=['POST'])
-def enviar_contato_site():
+@app.route('/enviar2-contato-site2', methods=['POST'])
+def enviar2_contato_site2():
     try:
         # Validar dados recebidos
         dados = {

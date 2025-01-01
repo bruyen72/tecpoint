@@ -17,7 +17,7 @@ function sendContactEmail(event) {
     buttonText.style.display = 'none';
     buttonLoading.style.display = 'inline-block';
 
-    fetch('/enviar-contato-site', {
+    fetch('/enviar2-contato-site2', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
