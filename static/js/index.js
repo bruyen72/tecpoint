@@ -6,12 +6,11 @@ function sendContactEmail(event) {
     const buttonText = button.querySelector('.button-text');
     const buttonLoading = button.querySelector('.button-loading');
 
-    const formData = {
-        name: document.getElementById('contact_name').value,
-        email: document.getElementById('contact_email').value,
-        phone: document.getElementById('contact_phone').value,
-        message: document.getElementById('contact_message').value
-    };
+    const formData = new FormData();
+    formData.append('name', document.getElementById('contact_name').value);
+    formData.append('email', document.getElementById('contact_email').value);
+    formData.append('phone', document.getElementById('contact_phone').value);
+    formData.append('message', document.getElementById('contact_message').value);
 
     button.disabled = true;
     buttonText.style.display = 'none';
@@ -19,10 +18,7 @@ function sendContactEmail(event) {
 
     fetch('/enviar-contato-site', {
         method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(formData)
+        body: formData
     })
     .then(response => response.json())
     .then(data => {
