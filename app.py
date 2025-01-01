@@ -494,7 +494,7 @@ def enviar_contato_site():
             return jsonify({'error': 'Por favor, preencha todos os campos obrigatórios'}), 400
 
         # Caminho do logo (relativo ao diretório do servidor)
-        logo_path = 'static/imagens/logo.png'
+        logo_path = 'static/imagens/LogoTecPoint.png'
 
         html_content = f"""
         <html>
