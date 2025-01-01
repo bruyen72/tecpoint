@@ -1,0 +1,16 @@
+services:
+  - type: web
+    name: tecpoint
+    env: python
+    region: oregon  # Escolha a região mais próxima do seu público
+    buildCommand: "pip install -r requirements.txt"
+    startCommand: "gunicorn app:app --bind 0.0.0.0:$PORT"
+    mounts:
+      - path: /var/lib/sqlite  # Diretório persistente para o SQLite
+        name: tecpoint-sqlite
+    plan: standard  # Garanta que o plano não seja gratuito (free), para evitar que o serviço "durma"
+    envVars:
+      - key: FLASK_ENV
+        value: production
+      - key: SECRET_KEY
+        generateValue: true  # Gera automaticamente uma chave secreta única
