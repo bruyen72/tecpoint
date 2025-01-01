@@ -26,31 +26,23 @@ app = Flask(
 
 # Configuração do ambiente e diretórios
 if 'RENDER' in os.environ:
-    UPLOAD_FOLDER = '/tmp/uploads'  # Diretório temporário no Render
-    DB_PATH = '/tmp/tecpoint.db'  # Banco de dados no Render
+    UPLOAD_FOLDER = '/tmp/uploads'
+    METADATA_FILE = '/tmp/file_metadata.json'
 else:
-    UPLOAD_FOLDER = os.path.join(os.getcwd(), 'static', 'uploads')  # Diretório local
-    DB_PATH = os.path.join(os.getcwd(), 'instance', 'tecpoint.db')  # Banco de dados local
+    UPLOAD_FOLDER = os.path.join(os.getcwd(), 'static', 'uploads')
+    METADATA_FILE = os.path.join(os.getcwd(), 'file_metadata.json')
 
-def create_directory(directory_path):
-    """Cria um diretório se ele não existir"""
-    try:
-        os.makedirs(directory_path, exist_ok=True)
-        print(f"Diretório criado ou já existe: {directory_path}")
-    except OSError as e:
-        print(f"Erro ao criar o diretório {directory_path}: {e}")
+# Criar diretório de uploads
+try:
+    os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+except OSError as e:
+    print(f"Erro ao criar diretório de uploads: {e}")
 
-# Criar diretórios necessários
-create_directory(UPLOAD_FOLDER)
-create_directory(os.path.dirname(DB_PATH))  # Cria o diretório para o SQLite, se necessário
-
-# Configuração do Flask com SQLite
+# Configurações básicas do Flask
 app.config.update(
-    SECRET_KEY=os.urandom(24),  # Chave secreta gerada aleatoriamente
-    UPLOAD_FOLDER=UPLOAD_FOLDER,  # Diretório para uploads
-    MAX_CONTENT_LENGTH=50 * 1024 * 1024,  # Limite de 50MB para uploads
-    SQLALCHEMY_DATABASE_URI=f'sqlite:///{DB_PATH}',  # Caminho do banco de dados SQLite
-    SQLALCHEMY_TRACK_MODIFICATIONS=False  # Desativa notificações de modificação
+    SECRET_KEY=os.urandom(24),
+    UPLOAD_FOLDER=UPLOAD_FOLDER,
+    MAX_CONTENT_LENGTH=50 * 1024 * 1024  # 50MB
 )
 
 # Funções auxiliares para metadados

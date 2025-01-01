@@ -5,7 +5,6 @@ from werkzeug.utils import secure_filename
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
-from email.mime.image import MIMEImage
 import email.utils  # NÃO REMOVER
 import os
 import json
@@ -27,29 +26,32 @@ app = Flask(
 
 # Configuração do ambiente e diretórios
 if 'RENDER' in os.environ:
-    UPLOAD_FOLDER = '/tmp/uploads'
-    METADATA_FILE = '/tmp/file_metadata.json'
+    UPLOAD_FOLDER = '/tmp/uploads'  # Diretório temporário no Render
+    DB_PATH = '/tmp/tecpoint.db'  # Banco de dados no Render
 else:
-    UPLOAD_FOLDER = os.path.join(os.getcwd(), 'static', 'uploads')
-    METADATA_FILE = os.path.join(os.getcwd(), 'file_metadata.json')
+    UPLOAD_FOLDER = os.path.join(os.getcwd(), 'static', 'uploads')  # Diretório local
+    DB_PATH = os.path.join(os.getcwd(), 'instance', 'tecpoint.db')  # Banco de dados local
 
-# Criar diretório de uploads
-try:
-    os.makedirs(UPLOAD_FOLDER, exist_ok=True)
-except OSError as e:
-    print(f"Erro ao criar diretório de uploads: {e}")
+def create_directory(directory_path):
+    """Cria um diretório se ele não existir"""
+    try:
+        os.makedirs(directory_path, exist_ok=True)
+        print(f"Diretório criado ou já existe: {directory_path}")
+    except OSError as e:
+        print(f"Erro ao criar o diretório {directory_path}: {e}")
 
-# Configurações básicas do Flask
+# Criar diretórios necessários
+create_directory(UPLOAD_FOLDER)
+create_directory(os.path.dirname(DB_PATH))  # Cria o diretório para o SQLite, se necessário
+
+# Configuração do Flask com SQLite
 app.config.update(
-    SECRET_KEY=os.urandom(24),
-    UPLOAD_FOLDER=UPLOAD_FOLDER,
-    MAX_CONTENT_LENGTH=50 * 1024 * 1024,  # 50MB
+    SECRET_KEY=os.urandom(24),  # Chave secreta gerada aleatoriamente
+    UPLOAD_FOLDER=UPLOAD_FOLDER,  # Diretório para uploads
+    MAX_CONTENT_LENGTH=50 * 1024 * 1024,  # Limite de 50MB para uploads
+    SQLALCHEMY_DATABASE_URI=f'sqlite:///{DB_PATH}',  # Caminho do banco de dados SQLite
+    SQLALCHEMY_TRACK_MODIFICATIONS=False  # Desativa notificações de modificação
 )
-
-# Configuração do banco de dados
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///example.db'  # Ajuste para o banco desejado
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-
 
 # Funções auxiliares para metadados
 def save_file_metadata(filename, filesize):
@@ -238,26 +240,24 @@ def produto_detalhe(id):
 @app.route('/enviar-cotacao', methods=['POST'])
 def enviar_cotacao():
     try:
-        # Coletar dados do formulário
         dados = {
             'nome': request.form.get('name', '').strip(),
             'email': request.form.get('email', '').strip(),
             'telefone': request.form.get('phone', '').strip(),
-            'empresa': request.form.get('company', '').strip(),
+            'produto': request.form.get('product_name', '').strip(),
+            'categoria': request.form.get('product_category', '').strip(),
             'quantidade': request.form.get('quantity', '1').strip(),
             'mensagem': request.form.get('message', '').strip(),
-            'imagem_produto': request.form.get('product_image', '').strip(),
             'data': datetime.now().strftime('%d/%m/%Y às %H:%M')
         }
 
-        # Criar a mensagem para a TecPoint
+        # Mensagem para a TecPoint
         msg_empresa = MIMEMultipart('related')
-        msg_empresa['Subject'] = f'Nova Cotação - Produto'
+        msg_empresa['Subject'] = f'Nova Cotação - {dados["produto"]}'
         msg_empresa['From'] = formataddr(("TecPoint Soluções", SMTP_USERNAME))
         msg_empresa['To'] = SMTP_USERNAME
         msg_empresa.add_header('Reply-To', dados['email'])
 
-        # Corpo do e-mail em HTML
         html_empresa = f"""
         <html>
         <body style="font-family: Arial, sans-serif;">
@@ -267,17 +267,17 @@ def enviar_cotacao():
                 <p>
                 <strong>Nome:</strong> {dados['nome']}<br>
                 <strong>Email:</strong> {dados['email']}<br>
-                <strong>Telefone:</strong> {dados['telefone']}<br>
-                <strong>Empresa:</strong> {dados['empresa']}</p>
+                <strong>Telefone:</strong> {dados['telefone']}</p>
             </div>
             <div style="margin: 20px 0;">
                 <h3>Produto Solicitado</h3>
                 <p>
-                <img src="cid:product_image" alt="Produto" style="width: 200px; height: auto;"><br>
+                <strong>Produto:</strong> {dados['produto']}<br>
+                <strong>Categoria:</strong> {dados['categoria']}<br>
                 <strong>Quantidade:</strong> {dados['quantidade']}</p>
             </div>
             <div style="margin: 20px 0;">
-                <h3>Mensagem Adicional</h3>
+                <h3>Mensagem</h3>
                 <p>{dados['mensagem']}</p>
             </div>
             <p style="color: #666; font-style: italic;">Recebido em {dados['data']}</p>
@@ -285,22 +285,6 @@ def enviar_cotacao():
         </html>
         """
         msg_empresa.attach(MIMEText(html_empresa, 'html', 'utf-8'))
-
-        # Anexar a imagem ao e-mail
-        if dados['imagem_produto']:
-            # Detectar o tipo de imagem (JPG ou PNG)
-            with open(dados['imagem_produto'], 'rb') as img_file:
-                img_data = img_file.read()
-                if dados['imagem_produto'].lower().endswith('.png'):
-                    img = MIMEImage(img_data, _subtype="png")
-                    img.add_header('Content-Disposition', 'inline', filename="product_image.png")
-                elif dados['imagem_produto'].lower().endswith(('.jpg', '.jpeg')):
-                    img = MIMEImage(img_data, _subtype="jpeg")
-                    img.add_header('Content-Disposition', 'inline', filename="product_image.jpg")
-                else:
-                    raise ValueError("Formato de imagem não suportado. Use JPG ou PNG.")
-                img.add_header('Content-ID', '<product_image>')
-                msg_empresa.attach(img)
 
         # Enviar usando SSL/TLS
         with smtplib.SMTP_SSL('smtps.uhserver.com', 465) as server:
@@ -312,7 +296,6 @@ def enviar_cotacao():
     except Exception as e:
         print(f'Erro ao enviar cotação: {e}')
         return jsonify({'error': 'Ocorreu um erro inesperado'}), 500
-
 
 def is_valid_email(email):
     """Valida formato básico do email"""
@@ -582,7 +565,7 @@ Recebido em {dados['data']}
 # -----------------------------------------------------------------------
 
 # Logo após as definições de Product e Admin
-
+@app.before_first_request
 def init_database():
     with app.app_context():
         try:
@@ -610,6 +593,7 @@ def init_database():
             if not os.path.exists(uploads_dir):
                 os.makedirs(uploads_dir)
                 print("Pasta de uploads criada!")
+
         except Exception as e:
             print(f"Erro na inicialização: {e}")
 @app.route('/enviar-contatoTEC', methods=['POST'])
