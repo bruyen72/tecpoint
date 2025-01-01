@@ -203,20 +203,17 @@ def produto_detalhe(id):
         Product.id != product.id
     ).limit(3).all()
     return render_template('produto_detalhe.html', product=product, related_products=related_products)
-@app.route('/enviar2-contato-site2', methods=['POST'])
+@app.route('/enviar-contato-site', methods=['POST'])
 def enviar_contato_site():
     try:
-        # Como o formulário está enviando FormData, usamos request.form
         user_name = request.form.get('name', '').strip()
         user_email = request.form.get('email', '').strip()
         phone = request.form.get('phone', '').strip()
         message = request.form.get('message', '').strip()
 
-        # Validação simples
         if not user_name or not user_email or not message:
             return jsonify({'error': 'Todos os campos obrigatórios precisam ser preenchidos'}), 400
 
-        # Criação da mensagem de texto simples
         msg = MIMEText(f"""
 NOVA MENSAGEM DO SITE (FormData):
 
@@ -231,21 +228,16 @@ Mensagem:
 Enviado através do formulário (rota /enviar-contato-site)
 """, 'plain', 'utf-8')
         
-        # Ajustando cabeçalhos
         msg['Subject'] = 'Nova Mensagem - Site TecPoint'
         msg['From'] = formataddr(("TecPoint Contato", SMTP_USERNAME))
         msg['To'] = SMTP_USERNAME
-
-        # Adiciona cabeçalho de Reply-To para facilitar respostas ao remetente
         msg.add_header('Reply-To', user_email)
 
-        # Envio do e-mail via SMTP_SSL
         with smtplib.SMTP_SSL(SMTP_SERVER, SMTP_PORT) as server:
             server.ehlo()
             server.login(SMTP_USERNAME, SMTP_PASSWORD)
             server.send_message(msg)
         
-        # Retorno de sucesso em JSON
         return jsonify({'message': 'Mensagem enviada com sucesso!'}), 200
 
     except smtplib.SMTPException as smtp_error:
