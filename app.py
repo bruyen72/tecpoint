@@ -493,10 +493,15 @@ def enviar_contato_site():
         if not all([dados['nome'], dados['email'], dados['mensagem']]):
             return jsonify({'error': 'Por favor, preencha todos os campos obrigatórios'}), 400
 
+        # Caminho do logo (relativo ao diretório do servidor)
+        logo_path = 'static/imagens/logo.png'
+
         html_content = f"""
         <html>
         <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
-            <div style="background-color: #00A859; padding: 20px; text-align: center; border-radius: 8px 8px 0 0;">
+            <!-- Cabeçalho com logo -->
+            <div style="background-color: #00A859; padding: 10px; text-align: center; border-radius: 8px 8px 0 0;">
+                <img src="{logo_path}" alt="TecPoint Soluções" style="width: 40px; height: 40px; margin-bottom: 10px;">
                 <h2 style="color: white; margin: 0;">Nova Mensagem do Site</h2>
             </div>
             
@@ -554,6 +559,7 @@ Recebido em {dados['data']}
     except Exception as e:
         print(f'Erro: {e}')
         return jsonify({'error': 'Erro ao enviar mensagem'}), 500
+
 # -----------------------------------------------------------------------
 
 # Logo após as definições de Product e Admin
