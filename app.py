@@ -590,55 +590,79 @@ def init_database():
             print(f"Erro na inicialização: {e}")
 @app.route('/enviar-contatoTEC', methods=['POST'])
 def enviar_contato_form():
-    try:
-        # Como o formulário está enviando FormData, usamos request.form
-        user_name = request.form.get('name', '').strip()
-        user_email = request.form.get('email', '').strip()
-        phone = request.form.get('phone', '').strip()
-        message = request.form.get('message', '').strip()
+   try:
+       dados = {
+           'nome': request.form.get('name', '').strip(),
+           'email': request.form.get('email', '').strip(),
+           'telefone': request.form.get('phone', '').strip(),
+           'mensagem': request.form.get('message', '').strip(),
+           'data': datetime.now().strftime('%d/%m/%Y às %H:%M')
+       }
 
-        # Validação simples
-        if not user_name or not user_email or not message:
-            return jsonify({'error': 'Todos os campos obrigatórios precisam ser preenchidos'}), 400
+       if not all([dados['nome'], dados['email'], dados['mensagem']]):
+           return jsonify({'error': 'Por favor, preencha todos os campos obrigatórios'}), 400
 
-        # Criação da mensagem de texto simples
-        msg = MIMEText(f"""
-NOVA MENSAGEM DO SITE (FormData):
+       html_content = f"""
+       <html>
+       <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+           <div style="background-color: #00A859; padding: 20px; text-align: center; border-radius: 8px 8px 0 0;">
+               <h2 style="color: white; margin: 0;">Nova Mensagem do Site</h2>
+           </div>
+           
+           <div style="background-color: #f9f9f9; padding: 20px; border-radius: 0 0 8px 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+               <div style="margin-bottom: 20px;">
+                   <h3 style="color: #00A859; border-bottom: 2px solid #00A859; padding-bottom: 8px;">Dados do Cliente</h3>
+                   <p><strong>Nome:</strong> {dados['nome']}</p>
+                   <p><strong>Email:</strong> {dados['email']}</p>
+                   <p><strong>Telefone:</strong> {dados['telefone'] or 'Não informado'}</p>
+               </div>
 
-Nome: {user_name}
-Email: {user_email}
-Telefone: {phone}
+               <div style="margin-bottom: 20px;">
+                   <h3 style="color: #00A859; border-bottom: 2px solid #00A859; padding-bottom: 8px;">Mensagem</h3>
+                   <p style="white-space: pre-wrap;">{dados['mensagem']}</p>
+               </div>
+
+               <div style="text-align: center; color: #666; font-style: italic; margin-top: 20px; padding-top: 20px; border-top: 1px solid #eee;">
+                   Mensagem recebida em {dados['data']}<br>
+                   Enviado através do formulário de contato
+               </div>
+           </div>
+       </body>
+       </html>
+       """
+
+       msg = MIMEMultipart('alternative')
+       msg['Subject'] = 'Nova Mensagem - Site TecPoint'
+       msg['From'] = formataddr(("TecPoint Soluções", SMTP_USERNAME))
+       msg['To'] = SMTP_USERNAME
+       msg.add_header('Reply-To', dados['email'])
+
+       text_content = f"""
+NOVA MENSAGEM DO SITE
+
+Dados do Cliente:
+Nome: {dados['nome']}
+Email: {dados['email']}
+Telefone: {dados['telefone']}
 
 Mensagem:
-{message}
+{dados['mensagem']}
 
---
-Enviado através do formulário (rota /enviar-contato)
-""", 'plain', 'utf-8')
-        
-        # Ajustando cabeçalhos
-        msg['Subject'] = 'Nova Mensagem - Site TecPoint'
-        msg['From'] = formataddr(("TecPoint Contato", SMTP_USERNAME))
-        msg['To'] = SMTP_USERNAME
+Recebido em {dados['data']}
+"""
+       msg.attach(MIMEText(text_content, 'plain', 'utf-8'))
+       msg.attach(MIMEText(html_content, 'html', 'utf-8'))
 
-        # Adiciona cabeçalho de Reply-To para facilitar respostas ao remetente
-        msg.add_header('Reply-To', user_email)
+       with smtplib.SMTP_SSL(SMTP_SERVER, SMTP_PORT) as server:
+           server.ehlo()
+           server.login(SMTP_USERNAME, SMTP_PASSWORD)
+           server.send_message(msg)
 
-        # Envio do e-mail via SMTP_SSL
-        with smtplib.SMTP_SSL(SMTP_SERVER, SMTP_PORT) as server:
-            server.ehlo()
-            server.login(SMTP_USERNAME, SMTP_PASSWORD)
-            server.send_message(msg)
-        
-        # Retorno de sucesso em JSON
-        return jsonify({'message': 'Mensagem enviada com sucesso!'}), 200
+       return jsonify({'message': 'Mensagem enviada com sucesso!'}), 200
 
-    except smtplib.SMTPException as smtp_error:
-        print(f'Erro SMTP ao enviar email do site: {smtp_error}')
-        return jsonify({'error': 'Erro no envio de e-mail, tente novamente mais tarde'}), 500
-    except Exception as e:
-        print(f'Erro geral: {e}')
-        return jsonify({'error': 'Ocorreu um erro inesperado'}), 500
+   except Exception as e:
+       print(f'Erro ao enviar mensagem: {e}')
+       return jsonify({'error': 'Erro ao enviar mensagem'}), 500
 
 # ------------------------------------------------------------------------
 # FIM NOVA ROTA
