@@ -77,7 +77,7 @@ def allowed_file(filename):
 # Configurações de Email
 SMTP_SERVER = 'smtps.uhserver.com'
 SMTP_PORT = 465
-SMTP_USERNAME = 'contato.tec@tecpoint.net.br'
+SMTP_USERNAME = 'contato@tecpoint.net.br'
 SMTP_PASSWORD = 'tecpoint@2024B'
 
 # Inicialização
