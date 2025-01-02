@@ -120,40 +120,43 @@ class Admin(db.Model):
     password_hash = db.Column(db.String(120), nullable=False)
 
 # Função de envio de email otimizada# Email Config
-# Configurações de Email (SUBSTITUIR)
+# Configurações exatas do UOL Host
 EMAIL_CONFIG = {
-    'SMTP_SERVER': 'smtps.uhserver.com',
-    'SMTP_PORT': 465,
+    'SMTP_SERVER': 'smtps.uhserver.com',  # servidor SMTP correto
+    'SMTP_PORT': 465,                     # porta correta
     'SMTP_USERNAME': 'contato@tecpoint.net.br',
     'SMTP_PASSWORD': 'tecpoint@2024B',
-    'DOMAIN': 'tecpoint.net.br'
+    'DOMAIN': 'tecpoint.net.br',
+    'SSL': True                          # SSL obrigatório
 }
 
 def send_email_with_retry(subject, text_content, html_content, recipient, max_retries=3):
-    msg = MIMEMultipart('alternative')
-    msg['Subject'] = subject
-    msg['From'] = formataddr(("TecPoint", EMAIL_CONFIG['SMTP_USERNAME']))
-    msg['To'] = recipient
-    msg['Date'] = formatdate(localtime=True)
-    msg['Message-ID'] = make_msgid(domain=EMAIL_CONFIG['DOMAIN'])
-    
-    msg.attach(MIMEText(text_content, 'plain', 'utf-8'))
-    msg.attach(MIMEText(html_content, 'html', 'utf-8'))
+    try:
+        msg = MIMEMultipart('alternative')
+        msg['Subject'] = subject
+        msg['From'] = formataddr(("TecPoint", EMAIL_CONFIG['SMTP_USERNAME']))
+        msg['To'] = recipient
+        msg['Date'] = formatdate(localtime=True)
+        
+        # Adiciona conteúdo
+        msg.attach(MIMEText(text_content, 'plain', 'utf-8'))
+        msg.attach(MIMEText(html_content, 'html', 'utf-8'))
 
-    for attempt in range(max_retries):
-        try:
-            with smtplib.SMTP_SSL(EMAIL_CONFIG['SMTP_SERVER'], EMAIL_CONFIG['SMTP_PORT']) as server:
-                server.ehlo()
-                server.login(EMAIL_CONFIG['SMTP_USERNAME'], EMAIL_CONFIG['SMTP_PASSWORD'])
-                server.send_message(msg)
-                return True
-        except Exception as e:
-            print(f"Tentativa {attempt + 1} falhou: {e}")
-            if attempt == max_retries - 1:
-                return False
-            time.sleep(2)
-    return False
+        # Tenta enviar usando SSL
+        with smtplib.SMTP_SSL(
+            host=EMAIL_CONFIG['SMTP_SERVER'],
+            port=EMAIL_CONFIG['SMTP_PORT'],
+            timeout=30
+        ) as server:
+            server.ehlo('tecpoint.net.br')
+            server.login(EMAIL_CONFIG['SMTP_USERNAME'], EMAIL_CONFIG['SMTP_PASSWORD'])
+            server.send_message(msg)
+            print(f"Email enviado com sucesso para {recipient}")
+            return True
 
+    except Exception as e:
+        print(f"Erro detalhado ao enviar email: {str(e)}")
+        return False
 # Funções auxiliares
 def ensure_upload_dir():
     """Garante que o diretório de uploads existe"""
