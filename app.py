@@ -133,8 +133,21 @@ EMAIL_CONFIG = {
 
 # Remover todas as outras definições SMTP_SERVER, etc.
 
+def send_email_with_retry(subject, html_content, to_email, reply_to=None, retries=3):
+    for attempt in range(retries):
+        print(f"Tentativa {attempt + 1} de envio de email...")
+        if send_email(subject, html_content, to_email, reply_to):
+            print("Email enviado com sucesso!")
+            return True
+        else:
+            print("Falha ao enviar email. Retentando...")
+    print("Todas as tentativas de envio de email falharam.")
+    return False
+
+
 def send_email(subject, html_content, to_email, reply_to=None):
     try:
+        print("Preparando o email...")
         msg = MIMEMultipart('alternative')
         msg['Subject'] = subject
         msg['From'] = formataddr(("TecPoint", EMAIL_CONFIG['SMTP_USERNAME']))
@@ -146,13 +159,18 @@ def send_email(subject, html_content, to_email, reply_to=None):
 
         msg.attach(MIMEText(html_content, 'html', 'utf-8'))
 
-        with smtplib.SMTP_SSL(EMAIL_CONFIG['SMTP_SERVER'], EMAIL_CONFIG['SMTP_PORT'], timeout=15) as server:
+        print("Conectando ao servidor SMTP...")
+        with smtplib.SMTP_SSL(EMAIL_CONFIG['SMTP_SERVER'], EMAIL_CONFIG['SMTP_PORT'], timeout=30) as server:
             server.login(EMAIL_CONFIG['SMTP_USERNAME'], EMAIL_CONFIG['SMTP_PASSWORD'])
+            print("Conexão bem-sucedida. Enviando o email...")
             server.send_message(msg)
+        print("Email enviado com sucesso!")
         return True
+    except smtplib.SMTPException as e:
+        print(f"Erro SMTP: {e}")
     except Exception as e:
-        print(f"Erro ao enviar email: {e}")
-        return False
+        print(f"Erro geral ao enviar email: {e}")
+    return False
 # Funções auxiliares
 def ensure_upload_dir():
     """Garante que o diretório de uploads existe"""
@@ -481,6 +499,7 @@ def add_security_headers(response):
 @app.route('/enviar-contato-site', methods=['POST'])
 def enviar_contato_site():
     try:
+        print("Recebendo solicitação de contato...")
         dados = {
             'nome': request.form.get('name', '').strip(),
             'email': request.form.get('email', '').strip(),
@@ -489,14 +508,13 @@ def enviar_contato_site():
             'data': datetime.now().strftime('%d/%m/%Y às %H:%M')
         }
 
-        # Validações
         if not dados['nome'] or not dados['email'] or not dados['mensagem']:
             return jsonify({'error': 'Campos obrigatórios não preenchidos'}), 400
 
         html_content = f"""
         <html>
         <body>
-            <h2>Nova Mensagem de Contato do Site</h2>
+            <h2>Nova Mensagem de Contato</h2>
             <p><strong>Nome:</strong> {dados['nome']}</p>
             <p><strong>Email:</strong> {dados['email']}</p>
             <p><strong>Telefone:</strong> {dados['telefone']}</p>
@@ -506,15 +524,20 @@ def enviar_contato_site():
         </html>
         """
 
-        # Enviar Email
-        if send_email('Nova Mensagem - Contato do Site', html_content, EMAIL_CONFIG['SMTP_USERNAME'], reply_to=dados['email']):
+        if send_email_with_retry(
+            subject="Nova Mensagem - Contato do Site",
+            html_content=html_content,
+            to_email=EMAIL_CONFIG['SMTP_USERNAME'],
+            reply_to=dados['email']
+        ):
             return jsonify({'message': 'Mensagem enviada com sucesso!'}), 200
         else:
-            return jsonify({'error': 'Erro ao enviar a mensagem'}), 500
+            return jsonify({'error': 'Erro ao enviar mensagem. Tente novamente mais tarde.'}), 500
 
     except Exception as e:
-        print(f"Erro ao enviar mensagem de contato: {e}")
+        print(f"Erro no envio de mensagem: {e}")
         return jsonify({'error': 'Erro interno no servidor'}), 500
+
 
 
 # -----------------------------------------------------------------------
