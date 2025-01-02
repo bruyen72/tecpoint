@@ -15,6 +15,7 @@ from functools import wraps
 from email.utils import formataddr,make_msgid
 # Adicione esta linha para poder usar formatdate:
 from email.utils import formatdate
+import re
 
 
 # Inicialização do Flask
@@ -139,33 +140,26 @@ def send_email(subject, html_content, to_email, reply_to=None):
         msg['From'] = formataddr(("TecPoint", EMAIL_CONFIG['SMTP_USERNAME']))
         msg['To'] = to_email
         msg['Date'] = formatdate(localtime=True)
-        msg['Message-ID'] = make_msgid(domain=EMAIL_CONFIG['DOMAIN'])
         
         if reply_to:
             msg.add_header('Reply-To', reply_to)
 
-        # Versão texto
+        # Versão texto (correção do erro do 're')
         text_content = html_content.replace('<br>', '\n').replace('</p>', '\n')
-        text_content = re.sub('<[^>]+>', '', text_content)
+        if re:  # Verifica se re está definido
+            text_content = re.sub('<[^>]+>', '', text_content)
         
         msg.attach(MIMEText(text_content, 'plain', 'utf-8'))
         msg.attach(MIMEText(html_content, 'html', 'utf-8'))
 
-        for attempt in range(3):
-            try:
-                with smtplib.SMTP(EMAIL_CONFIG['SMTP_SERVER'], EMAIL_CONFIG['SMTP_PORT']) as server:
-                    server.starttls()
-                    server.login(EMAIL_CONFIG['SMTP_USERNAME'], EMAIL_CONFIG['SMTP_PASSWORD'])
-                    server.send_message(msg)
-                    print(f"Email enviado com sucesso para {to_email}")
-                    return True
-            except Exception as e:
-                print(f"Tentativa {attempt + 1} falhou: {e}")
-                if attempt == 2:
-                    raise
-                time.sleep(2)
+        with smtplib.SMTP(EMAIL_CONFIG['SMTP_SERVER'], EMAIL_CONFIG['SMTP_PORT'], timeout=30) as server:
+            server.starttls()
+            server.login(EMAIL_CONFIG['SMTP_USERNAME'], EMAIL_CONFIG['SMTP_PASSWORD'])
+            server.send_message(msg)
+            print(f"Email enviado com sucesso para {to_email}")
+            return True
     except Exception as e:
-        print(f"Erro ao enviar email: {e}")
+        print(f"Erro detalhado ao enviar email: {str(e)}")
         return False
 # Funções auxiliares
 def ensure_upload_dir():
@@ -502,35 +496,34 @@ def enviar_contato_site():
             'mensagem': request.form.get('message', '').strip(),
             'data': datetime.now().strftime('%d/%m/%Y às %H:%M')
         }
-        
-        if not all([dados['nome'], dados['email'], dados['mensagem']]):
-            return jsonify({'error': 'Por favor, preencha todos os campos obrigatórios'}), 400
 
-        html_content = f"""
+        html_content = f'''
         <html>
-        <body style="font-family: Arial, sans-serif;">
+        <body>
             <h2>Nova Mensagem do Site</h2>
             <p><strong>Nome:</strong> {dados['nome']}</p>
             <p><strong>Email:</strong> {dados['email']}</p>
-            <p><strong>Telefone:</strong> {dados['telefone'] or 'Não informado'}</p>
+            <p><strong>Telefone:</strong> {dados['telefone']}</p>
             <p><strong>Mensagem:</strong><br>{dados['mensagem']}</p>
             <p>Recebido em {dados['data']}</p>
         </body>
         </html>
-        """
+        '''
 
-        if send_email(
+        result = send_email(
             'Nova Mensagem - Site TecPoint',
             html_content,
             EMAIL_CONFIG['SMTP_USERNAME'],
             dados['email']
-        ):
+        )
+
+        if result:
             return jsonify({'message': 'Mensagem enviada com sucesso!'}), 200
         else:
             return jsonify({'error': 'Erro ao enviar mensagem'}), 500
 
     except Exception as e:
-        print(f'Erro: {e}')
+        print(f'Erro completo: {e}')
         return jsonify({'error': 'Erro ao enviar mensagem'}), 500
 # -----------------------------------------------------------------------
 
