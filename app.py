@@ -25,12 +25,16 @@ app = Flask(
 )
 
 # --------------------------------------------------------------------
-# AJUSTE IMPORTANTE PARA USO DE SQLITE (ARQUIVO LOCAL)
+# AJUSTE IMPORTANTE PARA USO DE SQLITE (ARQUIVO LOCAL OU RENDER)
 # --------------------------------------------------------------------
-# 1) Configure aqui o seu caminho do banco SQLite
-#    Caso queira colocar o arquivo em outro local, basta alterar.
+# Primeiro, definimos o banco local como 'sqlite:///meubanco.db'.
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///meubanco.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
+# Se estivermos na Render, podemos sobrescrever o caminho do banco
+# para usar um volume persistente em /var/lib/sqlite.
+if 'RENDER' in os.environ:
+    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:////var/lib/sqlite/meubanco.db'
 # --------------------------------------------------------------------
 
 # Configuração do ambiente e diretórios
@@ -49,7 +53,7 @@ except OSError as e:
 
 # Configurações básicas do Flask
 app.config.update(
-    SECRET_KEY=os.urandom(24),
+    SECRET_KEY=os.urandom(24),  # Se quiser fixar uma SECRET_KEY, basta substituir por algo fixo
     UPLOAD_FOLDER=UPLOAD_FOLDER,
     MAX_CONTENT_LENGTH=50 * 1024 * 1024  # 50MB
 )
