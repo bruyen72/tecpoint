@@ -24,42 +24,35 @@ app = Flask(
     static_url_path=''
 )
 
-# --------------------------------------------------------------------
-# Usar sempre o caminho absoluto /var/lib/sqlite/tecpoint.db
-# --------------------------------------------------------------------
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:////var/lib/sqlite/tecpoint.db'
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-
-# Tentar criar /var/lib/sqlite e ajustar permissões
-try:
-    os.makedirs('/var/lib/sqlite', exist_ok=True)
-    os.chmod('/var/lib/sqlite', 0o777)
-    print("=== Diretório /var/lib/sqlite criado/ajustado com sucesso.")
-except Exception as e:
-    print(f"Erro ao criar/ajustar /var/lib/sqlite: {e}")
-# --------------------------------------------------------------------
-
 # Configuração do ambiente e diretórios
-UPLOAD_FOLDER = os.path.join(os.getcwd(), 'static', 'uploads')
-METADATA_FILE = os.path.join(os.getcwd(), 'file_metadata.json')
+if 'RENDER' in os.environ:
+    UPLOAD_FOLDER = '/tmp/uploads'
+    METADATA_FILE = '/tmp/file_metadata.json'
+else:
+    UPLOAD_FOLDER = os.path.join(os.getcwd(), 'static', 'uploads')
+    METADATA_FILE = os.path.join(os.getcwd(), 'file_metadata.json')
 
+# Criar diretório de uploads
 try:
     os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 except OSError as e:
     print(f"Erro ao criar diretório de uploads: {e}")
 
+# Configurações básicas do Flask
 app.config.update(
-    SECRET_KEY=os.urandom(24),  # Se quiser fixar uma SECRET_KEY, basta substituir por algo fixo
+    SECRET_KEY=os.urandom(24),
     UPLOAD_FOLDER=UPLOAD_FOLDER,
     MAX_CONTENT_LENGTH=50 * 1024 * 1024  # 50MB
 )
 
+# Funções auxiliares para metadados
 def save_file_metadata(filename, filesize):
     metadata = load_metadata()
     metadata[filename] = {
         'upload_date': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
         'size': filesize
     }
+    
     try:
         with open(METADATA_FILE, 'w') as f:
             json.dump(metadata, f, indent=4)
@@ -75,19 +68,23 @@ def load_metadata():
         print(f"Erro ao carregar metadados: {e}")
     return {}
 
+# Extensões permitidas
 ALLOWED_EXTENSIONS = {'pdf', 'png', 'jpg', 'jpeg', 'gif', 'doc', 'docx', 'txt'}
 
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
+# Configurações de Email
 SMTP_SERVER = 'smtps.uhserver.com'
 SMTP_PORT = 465
 SMTP_USERNAME = 'contato@tecpoint.net.br'
 SMTP_PASSWORD = 'tecpoint@2024B'
 
+# Inicialização
 db = SQLAlchemy(app)
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'pdf'}
 
+# Modelos
 class Product(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
@@ -104,20 +101,27 @@ class Admin(db.Model):
     username = db.Column(db.String(80), unique=True, nullable=False)
     password_hash = db.Column(db.String(120), nullable=False)
 
+# Função de envio de email otimizada
 def send_email_with_retry(subject, text_content, html_content, recipient, is_internal=False, max_retries=3):
+    """Função de envio de email com suporte HTML melhorado"""
     try:
+        # Criar mensagem com partes alternativas
         msg = MIMEMultipart('alternative')
         msg['Subject'] = subject
         msg['From'] = SMTP_USERNAME
         msg['To'] = recipient
         msg['Date'] = email.utils.formatdate(localtime=True)
+
+        # Exibir nome amigável no FROM
         msg['From'] = formataddr(("TecPoint Soluções", SMTP_USERNAME))
 
+        # Adiciona as versões texto e HTML
         part1 = MIMEText(text_content, 'plain', 'utf-8')
         part2 = MIMEText(html_content, 'html', 'utf-8')
         msg.attach(part1)
         msg.attach(part2)
 
+        # Tenta enviar
         for attempt in range(max_retries):
             try:
                 with smtplib.SMTP_SSL(SMTP_SERVER, SMTP_PORT) as server:
@@ -136,16 +140,20 @@ def send_email_with_retry(subject, text_content, html_content, recipient, is_int
         print(f"Erro ao enviar email: {e}")
         return False
 
+# Funções auxiliares
 def ensure_upload_dir():
+    """Garante que o diretório de uploads existe"""
     if not os.path.exists(app.config['UPLOAD_FOLDER']):
         os.makedirs(app.config['UPLOAD_FOLDER'])
         if app.debug:
             os.chmod(app.config['UPLOAD_FOLDER'], 0o777)
 
 def allowed_file(filename):
+    """Verifica se a extensão do arquivo é permitida"""
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 def save_file(file):
+    """Salva o arquivo com nome único"""
     if not file or not file.filename:
         return None
     if not allowed_file(file.filename):
@@ -163,6 +171,7 @@ def save_file(file):
         return None
 
 def delete_file(filename):
+    """Remove um arquivo de forma segura"""
     if filename:
         try:
             file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
@@ -172,6 +181,7 @@ def delete_file(filename):
             print(f"Erro ao remover arquivo: {e}")
 
 def admin_required(f):
+    """Decorador para rotas que requerem autenticação"""
     from functools import wraps
     @wraps(f)
     def decorated_function(*args, **kwargs):
@@ -182,11 +192,13 @@ def admin_required(f):
 
 @app.template_filter('json_loads')
 def json_loads_filter(json_string):
+    """Filtro para carregar JSON de forma segura"""
     try:
         return json.loads(json_string) if json_string else []
     except:
         return []
 
+# Rotas básicas
 @app.route('/')
 def index():
     return render_template('index.html')
@@ -231,6 +243,7 @@ def enviar_cotacao():
             'data': datetime.now().strftime('%d/%m/%Y às %H:%M')
         }
 
+        # Mensagem para a TecPoint
         msg_empresa = MIMEMultipart('related')
         msg_empresa['Subject'] = f'Nova Cotação - {dados["produto"]}'
         msg_empresa['From'] = formataddr(("TecPoint Soluções", SMTP_USERNAME))
@@ -265,6 +278,7 @@ def enviar_cotacao():
         """
         msg_empresa.attach(MIMEText(html_empresa, 'html', 'utf-8'))
 
+        # Enviar usando SSL/TLS
         with smtplib.SMTP_SSL('smtps.uhserver.com', 465) as server:
             server.login(SMTP_USERNAME, SMTP_PASSWORD)
             server.send_message(msg_empresa)
@@ -276,6 +290,7 @@ def enviar_cotacao():
         return jsonify({'error': 'Ocorreu um erro inesperado'}), 500
 
 def is_valid_email(email):
+    """Valida formato básico do email"""
     try:
         user_part, domain_part = email.rsplit('@', 1)
         return len(user_part) > 0 and len(domain_part) > 3 and '.' in domain_part
@@ -283,6 +298,7 @@ def is_valid_email(email):
         return False
 
 def save_failed_email(dados):
+    """Salva emails que falharam para retry posterior"""
     try:
         with open('failed_emails.json', 'a') as f:
             json.dump({
@@ -292,7 +308,6 @@ def save_failed_email(dados):
             f.write('\n')
     except Exception as e:
         print(f"Erro ao salvar email falho: {e}")
-
 @app.route('/admin')
 @admin_required
 def admin_dashboard():
@@ -328,6 +343,7 @@ def admin_logout():
 def admin_add_product():
     if request.method == 'POST':
         try:
+            # Dados do formulário
             form_data = {
                 'name': request.form.get('name'),
                 'description': request.form.get('description'),
@@ -337,23 +353,28 @@ def admin_add_product():
                 'pdf': request.files.get('pdf'),
                 'additional_files': request.files.getlist('images')
             }
+            # Validações
             if not all([form_data['name'], form_data['description'], 
                        form_data['category'], form_data['image']]):
                 flash('Preencha todos os campos obrigatórios')
                 return redirect(url_for('admin_add_product'))
 
+            # Processa especificações
             specs = [s.strip() for s in form_data['specs'] if s.strip()]
             if not specs:
                 flash('Adicione pelo menos uma especificação')
                 return redirect(url_for('admin_add_product'))
 
+            # Salva imagem principal
             image_filename = save_file(form_data['image'])
             if not image_filename:
                 flash('Erro ao salvar imagem principal')
                 return redirect(url_for('admin_add_product'))
 
+            # Salva PDF se existir
             pdf_filename = save_file(form_data['pdf']) if form_data['pdf'] else None
 
+            # Processa imagens adicionais
             additional_images = []
             for f in form_data['additional_files']:
                 if f:
@@ -361,6 +382,7 @@ def admin_add_product():
                     if img_name:
                         additional_images.append(img_name)
 
+            # Cria produto
             product = Product(
                 name=form_data['name'],
                 description=form_data['description'],
@@ -370,6 +392,7 @@ def admin_add_product():
                 pdf_path=pdf_filename,
                 image_paths=json.dumps(additional_images) if additional_images else None
             )
+
             db.session.add(product)
             db.session.commit()
             flash('Produto adicionado com sucesso!')
@@ -389,10 +412,13 @@ def admin_delete_product(id):
     product = Product.query.get_or_404(id)
     
     try:
+        # Remove arquivos
         if product.image_path:
             delete_file(product.image_path)
+            
         if product.pdf_path:
             delete_file(product.pdf_path)
+
         if product.image_paths:
             try:
                 extra_images = json.loads(product.image_paths)
@@ -414,6 +440,7 @@ def admin_delete_product(id):
 
 @app.route('/uploads/<filename>')
 def uploaded_file(filename):
+    """Serve arquivos de upload de forma segura"""
     try:
         if not secure_filename(filename) == filename:
             print(f"Tentativa de acesso a arquivo inseguro: {filename}")
@@ -423,11 +450,13 @@ def uploaded_file(filename):
         if not os.path.exists(file_path):
             print(f"Arquivo não encontrado: {filename}")
             return "Arquivo não encontrado", 404
+            
         return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
     except Exception as e:
         print(f"Erro ao servir arquivo {filename}: {e}")
         return "Erro ao acessar arquivo", 500
 
+# Tratamento de erros
 @app.errorhandler(404)
 def page_not_found(e):
     return render_template('404.html'), 404
@@ -441,6 +470,7 @@ def request_entity_too_large(e):
     flash('O arquivo enviado é muito grande. Por favor, reduza o tamanho.')
     return redirect(url_for('admin_add_product'))
 
+# Configurações de segurança adicionais
 @app.after_request
 def add_security_headers(response):
     response.headers['X-Content-Type-Options'] = 'nosniff'
@@ -448,6 +478,7 @@ def add_security_headers(response):
     response.headers['X-XSS-Protection'] = '1; mode=block'
     return response
 
+# ------------------------------------------------------------------------
 @app.route('/enviar-contato-site', methods=['POST'])
 def enviar_contato_site():
     try:
@@ -496,6 +527,7 @@ def enviar_contato_site():
         msg['To'] = SMTP_USERNAME
         msg.add_header('Reply-To', dados['email'])
 
+        # Versão texto
         text_content = f"""
 NOVA MENSAGEM DO SITE
 
@@ -522,14 +554,18 @@ Recebido em {dados['data']}
     except Exception as e:
         print(f'Erro: {e}')
         return jsonify({'error': 'Erro ao enviar mensagem'}), 500
+# -----------------------------------------------------------------------
 
+# Logo após as definições de Product e Admin
 @app.before_first_request
 def init_database():
     with app.app_context():
         try:
+            # Criar todas as tabelas
             db.create_all()
             print("Tabelas criadas com sucesso!")
 
+            # Verificar e criar admin padrão se não existir
             admin = Admin.query.filter_by(username='admin').first()
             if not admin:
                 admin = Admin(
@@ -538,13 +574,13 @@ def init_database():
                 )
                 db.session.add(admin)
                 db.session.commit()
-                print("Admin padrão criado com sucesso!")
-            else:
-                print("Admin padrão já existe.")
+                print("Admin criado com sucesso!")
 
+            # Verificar se existem produtos
             produtos_count = Product.query.count()
             print(f"Total de produtos no banco: {produtos_count}")
 
+            # Garantir que a pasta de uploads existe
             uploads_dir = os.path.join(os.getcwd(), 'static', 'uploads')
             if not os.path.exists(uploads_dir):
                 os.makedirs(uploads_dir)
@@ -552,7 +588,6 @@ def init_database():
 
         except Exception as e:
             print(f"Erro na inicialização: {e}")
-
 @app.route('/enviar-contatoTEC', methods=['POST'])
 def enviar_contato_form():
    try:
@@ -629,13 +664,19 @@ Recebido em {dados['data']}
        print(f'Erro ao enviar mensagem: {e}')
        return jsonify({'error': 'Erro ao enviar mensagem'}), 500
 
+# ------------------------------------------------------------------------
+# FIM NOVA ROTA
+# ------------------------------------------------------------------------
+
 if __name__ == '__main__':
     with app.app_context():
         try:
+            # Inicializa o banco de dados e garante que todas as tabelas sejam criadas
             print("Inicializando o banco de dados...")
             db.create_all()
             print("Tabelas criadas com sucesso!")
 
+            # Cria admin padrão, caso não exista
             print("Verificando existência do admin padrão...")
             if not Admin.query.filter_by(username='admin').first():
                 admin = Admin(
@@ -648,8 +689,10 @@ if __name__ == '__main__':
             else:
                 print("Admin padrão já existe.")
 
-            port = int(os.environ.get('PORT', 8080))
+            # Configura a porta e inicia o servidor
+            port = int(os.environ.get('PORT', 8080))  # Padrão para Fly.io
             print(f"Iniciando o servidor na porta {port}...")
             app.run(host='0.0.0.0', port=port)
         except Exception as e:
+            # Tratamento genérico de erro
             print(f"Erro ao inicializar a aplicação: {e}")

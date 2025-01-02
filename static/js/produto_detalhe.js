@@ -153,44 +153,36 @@ window.addEventListener('load', function () {
             e.preventDefault();
         
             const submitButton = quotationForm.querySelector('button[type="submit"]');
-const originalButtonText = submitButton.innerHTML;
-submitButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Enviando...';
-submitButton.disabled = true;
-
-try {
-    const formData = new FormData(quotationForm);
-
-    // Adiciona o nome e categoria do produto
-    formData.append('product_name', document.querySelector('h1').textContent);
-    formData.append('product_category', document.querySelector('.produto-categoria').textContent);
-
-    // Adiciona a imagem do produto
-    const productImageSrc = document.getElementById('quotationProductImage').src;
-    formData.append('product_image', productImageSrc);
-
-    // Envia os dados para o servidor
-    const response = await fetch('/enviar-cotacao', {
-        method: 'POST',
-        body: formData
-    });
-
-    const data = await response.json();
-
-    if (response.ok) {
-        alert(data.message);
-        quotationForm.reset();
-        quotationModal.classList.remove('active');
-    } else {
-        throw new Error(data.error || 'Erro ao enviar cotação');
-    }
-} catch (error) {
-    console.error('Erro:', error);
-    alert(error.message || 'Erro ao enviar cotação. Por favor, tente novamente.');
-} finally {
-    submitButton.innerHTML = originalButtonText;
-    submitButton.disabled = false;
-}
-
+            const originalButtonText = submitButton.innerHTML;
+            submitButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Enviando...';
+            submitButton.disabled = true;
+        
+            try {
+                const formData = new FormData(quotationForm);
+                formData.append('product_name', document.querySelector('h1').textContent);
+                formData.append('product_category', document.querySelector('.produto-categoria').textContent);
+        
+                const response = await fetch('/enviar-cotacao', {
+                    method: 'POST',
+                    body: formData
+                });
+        
+                const data = await response.json();
+                
+                if (response.ok) {
+                    alert(data.message);
+                    quotationForm.reset();
+                    quotationModal.classList.remove('active');
+                } else {
+                    throw new Error(data.error || 'Erro ao enviar cotação');
+                }
+            } catch (error) {
+                console.error('Erro:', error);
+                alert(error.message || 'Erro ao enviar cotação. Por favor, tente novamente.');
+            } finally {
+                submitButton.innerHTML = originalButtonText;
+                submitButton.disabled = false;
+            }
         });
 
         if (closeQuotationForm) {
