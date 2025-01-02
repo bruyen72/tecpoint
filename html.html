@@ -1,0 +1,119 @@
+<section class="produtos-hero">
+    <div class="produtos-hero-content">
+        <h1>Nossos Produtos</h1>
+        <p>Soluções completas em radiocomunicação para sua empresa</p>
+    </div>
+</section>
+
+<style>
+:root {
+    --primary: #00A859;
+    --darker: #004225;
+    --accent: #00E676;
+    --light: #FFFFFF;
+}
+
+.produtos-hero {
+    padding-top: 120px;
+    background: var(--darker);
+    text-align: center;
+    color: var(--light);
+    padding-bottom: 4rem;
+    position: relative;
+}
+
+.produtos-hero::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, var(--darker), rgba(0,66,37,0.9));
+    opacity: 0.8;
+}
+
+.produtos-hero-content {
+    position: relative;
+    z-index: 2;
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 2rem;
+}
+
+/* Melhorias nos textos e animações */
+.produtos-hero h1 {
+    font-size: clamp(2.5rem, 5vw, 4rem);
+    margin-bottom: 1.5rem;
+    position: relative;
+    opacity: 0;
+    animation: slideInTitle 1s forwards;
+}
+
+.produtos-hero h1::after {
+    content: '';
+    position: absolute;
+    bottom: -10px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 0;
+    height: 3px;
+    background: var(--accent);
+    animation: lineGrow 0.8s 0.8s forwards;
+}
+
+.produtos-hero p {
+    font-size: 1.2rem;
+    color: var(--accent);
+    margin-bottom: 2rem;
+    opacity: 0;
+    animation: fadeInUp 0.8s 0.5s forwards;
+    text-shadow: 0 2px 5px rgba(0,0,0,0.2);
+}
+
+/* Animações */
+@keyframes slideInTitle {
+    0% {
+        opacity: 0;
+        transform: translateY(-30px);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes lineGrow {
+    0% {
+        width: 0;
+    }
+    100% {
+        width: 100px;
+    }
+}
+
+@keyframes fadeInUp {
+    0% {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Adiciona efeito hover no título */
+.produtos-hero h1:hover {
+    transform: scale(1.02);
+    transition: transform 0.3s ease;
+}
+
+/* Responsividade */
+@media (max-width: 768px) {
+    .produtos-hero h1::after {
+        animation: lineGrow 0.8s 0.8s forwards;
+        width: 60px;
+    }
+}
+</style>
