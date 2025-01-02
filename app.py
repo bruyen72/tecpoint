@@ -127,22 +127,26 @@ def send_email(subject, html_content, to_email, reply_to=None):
         msg['From'] = formataddr(("TecPoint", SMTP_USERNAME))
         msg['To'] = to_email
         msg['Date'] = formatdate(localtime=True)
+        msg['Message-ID'] = make_msgid(domain='tecpoint.net.br')  # Importante!
+        msg['Return-Path'] = SMTP_USERNAME  # Importante!
         
         if reply_to:
             msg.add_header('Reply-To', reply_to)
+            msg.add_header('In-Reply-To', reply_to)  # Ajuda na thread do Gmail
 
-        # Gera versão texto do HTML
-        text_content = html_content.replace('<br>', '\n').replace('</p>', '\n')
-        
-        msg.attach(MIMEText(text_content, 'plain', 'utf-8'))
+        # Headers adicionais para melhor entrega
+        msg.add_header('X-Priority', '1')
+        msg.add_header('X-MSMail-Priority', 'High')
+        msg.add_header('X-Mailer', 'TecPoint Mailer')
+
         msg.attach(MIMEText(html_content, 'html', 'utf-8'))
 
         with smtplib.SMTP_SSL(SMTP_SERVER, SMTP_PORT, timeout=30) as server:
-            server.ehlo()
+            server.ehlo('tecpoint.net.br')  # Domínio correto
             server.login(SMTP_USERNAME, SMTP_PASSWORD)
             server.send_message(msg)
             return True
-            
+
     except Exception as e:
         print(f"Erro ao enviar email: {e}")
         return False

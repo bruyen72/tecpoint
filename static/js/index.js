@@ -1,42 +1,59 @@
-// Função para enviar email
-function sendContactEmail(event) {
+// Função principal de envio de email
+async function sendContactEmail(event) {
     event.preventDefault();
 
+    // Elementos do botão
     const button = document.getElementById('submitButton');
     const buttonText = button.querySelector('.button-text');
     const buttonLoading = button.querySelector('.button-loading');
 
+    // Validação básica
+    const name = document.getElementById('contact_name').value.trim();
+    const email = document.getElementById('contact_email').value.trim();
+    const message = document.getElementById('contact_message').value.trim();
+
+    if (!name || !email || !message) {
+        alert('Por favor, preencha todos os campos obrigatórios');
+        return false;
+    }
+
+    // Preparar dados
     const formData = new FormData();
-    formData.append('name', document.getElementById('contact_name').value);
-    formData.append('email', document.getElementById('contact_email').value);
+    formData.append('name', name);
+    formData.append('email', email);
     formData.append('phone', document.getElementById('contact_phone').value);
-    formData.append('message', document.getElementById('contact_message').value);
+    formData.append('message', message);
 
-    button.disabled = true;
-    buttonText.style.display = 'none';
-    buttonLoading.style.display = 'inline-block';
+    try {
+        // Desabilitar botão e mostrar loading
+        button.disabled = true;
+        buttonText.style.display = 'none';
+        buttonLoading.style.display = 'inline-block';
 
-    fetch('/enviar-contato-site', {
-        method: 'POST',
-        body: formData
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.message) {
-            alert('Mensagem enviada com sucesso!');
+        // Enviar email
+        const response = await fetch('/enviar-contato-site', {
+            method: 'POST',
+            body: formData
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+            alert('Mensagem enviada com sucesso! Em breve entraremos em contato.');
             document.getElementById('contactForm').reset();
         } else {
             throw new Error(data.error || 'Erro ao enviar mensagem');
         }
-    })
-    .catch(error => {
-        alert('Erro ao enviar mensagem. Tente novamente.');
-    })
-    .finally(() => {
+
+    } catch (error) {
+        console.error('Erro:', error);
+        alert('Erro ao enviar mensagem. Por favor, tente novamente.');
+    } finally {
+        // Restaurar botão
         button.disabled = false;
         buttonText.style.display = 'inline-block';
         buttonLoading.style.display = 'none';
-    });
+    }
 
     return false;
 }
