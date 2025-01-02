@@ -15,14 +15,24 @@ from functools import wraps
 from email.utils import formataddr
 # Adicione esta linha para poder usar formatdate:
 from email.utils import formatdate
+from flask_compress import Compress
+from whitenoise import WhiteNoise
+from PIL import Image
+import logging
 
 
 # Inicialização do Flask
-app = Flask(
-    __name__,
-    static_folder='static',
-    static_url_path=''
+app = Flask(__name__, static_folder='static', static_url_path='')
+Compress(app)  # Adiciona compressão GZIP
+app.wsgi_app = WhiteNoise(
+    app.wsgi_app,
+    root='static/',
+    prefix='static/',
+    max_age=31536000
 )
+# Configuração de logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 # --------------------------------------------------------------------
 # AJUSTE IMPORTANTE PARA USO NO RAILWAY (OU AMBIENTE COM 'DATABASE_URL')
@@ -60,9 +70,53 @@ except OSError as e:
 app.config.update(
     SECRET_KEY=os.urandom(24),
     UPLOAD_FOLDER=UPLOAD_FOLDER,
-    MAX_CONTENT_LENGTH=50 * 1024 * 1024  # 50MB
+    MAX_CONTENT_LENGTH=50 * 1024 * 1024,  # 50MB
+    SQLALCHEMY_DATABASE_URI=db_uri,
+    SQLALCHEMY_TRACK_MODIFICATIONS=False,
+    SQLALCHEMY_ENGINE_OPTIONS={
+        'pool_size': 5,
+        'pool_timeout': 30,
+        'pool_recycle': 1800,
+        'max_overflow': 2
+    },
+    SEND_FILE_MAX_AGE_DEFAULT=31536000
 )
+#otimizar de cache e headers
+@app.after_request
+def add_headers(response):
+    """Adiciona headers otimizados"""
+    # Cache para arquivos estáticos
+    if 'Cache-Control' not in response.headers:
+        response.headers['Cache-Control'] = 'public, max-age=31536000'
+    
+    # Headers de segurança
+    response.headers.update({
+        'X-Content-Type-Options': 'nosniff',
+        'X-Frame-Options': 'SAMEORIGIN',
+        'X-XSS-Protection': '1; mode=block',
+        'Vary': 'Accept-Encoding'
+    })
+    return response
 
+@app.route('/static/<path:filename>')
+def serve_static(filename):
+    """Serve arquivos estáticos com cache"""
+    response = send_from_directory('static', filename)
+    response.headers['Cache-Control'] = 'public, max-age=31536000'
+    return response
+# otimizacao de imagem 
+def optimize_image(file_path):
+    """Otimiza imagens enviadas"""
+    try:
+        with Image.open(file_path) as img:
+            # Redimensionar se muito grande
+            if img.size[0] > 1920 or img.size[1] > 1080:
+                img.thumbnail((1920, 1080), Image.LANCZOS)
+            
+            # Otimizar e salvar
+            img.save(file_path, optimize=True, quality=85)
+    except Exception as e:
+        logger.error(f"Erro ao otimizar imagem: {e}")
 # Funções auxiliares para metadados
 def save_file_metadata(filename, filesize):
     metadata = load_metadata()
