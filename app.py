@@ -497,10 +497,11 @@ def enviar_contato_site():
             'data': datetime.now().strftime('%d/%m/%Y às %H:%M')
         }
 
+        # Conteúdo do email
         html_content = f'''
         <html>
         <body>
-            <h2>Nova Mensagem do Site</h2>
+            <h2>Nova Mensagem de Contato do Site</h2>
             <p><strong>Nome:</strong> {dados['nome']}</p>
             <p><strong>Email:</strong> {dados['email']}</p>
             <p><strong>Telefone:</strong> {dados['telefone']}</p>
@@ -510,21 +511,23 @@ def enviar_contato_site():
         </html>
         '''
 
+        # Envio do email
         result = send_email(
-            'Nova Mensagem - Site TecPoint',
-            html_content,
-            EMAIL_CONFIG['SMTP_USERNAME'],
-            dados['email']
+            subject='Nova Mensagem - Contato do Site',
+            html_content=html_content,
+            to_email=EMAIL_CONFIG['SMTP_USERNAME'],
+            reply_to=dados['email']
         )
 
         if result:
             return jsonify({'message': 'Mensagem enviada com sucesso!'}), 200
         else:
-            return jsonify({'error': 'Erro ao enviar mensagem'}), 500
+            return jsonify({'error': 'Erro ao enviar a mensagem'}), 500
 
     except Exception as e:
-        print(f'Erro completo: {e}')
-        return jsonify({'error': 'Erro ao enviar mensagem'}), 500
+        print(f'Erro ao enviar mensagem de contato: {e}')
+        return jsonify({'error': 'Erro ao enviar a mensagem'}), 500
+
 # -----------------------------------------------------------------------
 
 # Logo após as definições de Product e Admin
