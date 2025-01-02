@@ -12,7 +12,7 @@ import uuid
 import time
 from datetime import datetime
 from functools import wraps
-from email.utils import formataddr
+from email.utils import formataddr,make_msgid
 # Adicione esta linha para poder usar formatdate:
 from email.utils import formatdate
 

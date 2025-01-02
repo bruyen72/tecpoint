@@ -1,4 +1,3 @@
-// Função principal de envio de email
 async function sendContactEmail(event) {
     event.preventDefault();
 
