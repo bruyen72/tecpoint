@@ -24,33 +24,34 @@ app = Flask(
     static_url_path=''
 )
 
+# --------------------------------------------------------------------
+# AJUSTE IMPORTANTE PARA USO DE SQLITE (ARQUIVO LOCAL)
+# --------------------------------------------------------------------
+# 1) Configure aqui o seu caminho do banco SQLite
+#    Caso queira colocar o arquivo em outro local, basta alterar.
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///meubanco.db'
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+# --------------------------------------------------------------------
+
 # Configuração do ambiente e diretórios
 if 'RENDER' in os.environ:
-    UPLOAD_FOLDER = '/tmp/uploads'  # Diretório temporário no Render
-    DB_PATH = '/tmp/tecpoint.db'  # Banco de dados no Render
+    UPLOAD_FOLDER = '/tmp/uploads'
+    METADATA_FILE = '/tmp/file_metadata.json'
 else:
-    UPLOAD_FOLDER = os.path.join(os.getcwd(), 'static', 'uploads')  # Diretório local
-    DB_PATH = os.path.join(os.getcwd(), 'instance', 'tecpoint.db')  # Banco de dados local
+    UPLOAD_FOLDER = os.path.join(os.getcwd(), 'static', 'uploads')
+    METADATA_FILE = os.path.join(os.getcwd(), 'file_metadata.json')
 
-def create_directory(directory_path):
-    """Cria um diretório se ele não existir"""
-    try:
-        os.makedirs(directory_path, exist_ok=True)
-        print(f"Diretório criado ou já existe: {directory_path}")
-    except OSError as e:
-        print(f"Erro ao criar o diretório {directory_path}: {e}")
+# Criar diretório de uploads
+try:
+    os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+except OSError as e:
+    print(f"Erro ao criar diretório de uploads: {e}")
 
-# Criar diretórios necessários
-create_directory(UPLOAD_FOLDER)
-create_directory(os.path.dirname(DB_PATH))  # Cria o diretório para o SQLite, se necessário
-
-# Configuração do Flask com SQLite
+# Configurações básicas do Flask
 app.config.update(
-    SECRET_KEY=os.urandom(24),  # Chave secreta gerada aleatoriamente
-    UPLOAD_FOLDER=UPLOAD_FOLDER,  # Diretório para uploads
-    MAX_CONTENT_LENGTH=50 * 1024 * 1024,  # Limite de 50MB para uploads
-    SQLALCHEMY_DATABASE_URI=f'sqlite:///{DB_PATH}',  # Caminho do banco de dados SQLite
-    SQLALCHEMY_TRACK_MODIFICATIONS=False  # Desativa notificações de modificação
+    SECRET_KEY=os.urandom(24),
+    UPLOAD_FOLDER=UPLOAD_FOLDER,
+    MAX_CONTENT_LENGTH=50 * 1024 * 1024  # 50MB
 )
 
 # Funções auxiliares para metadados
@@ -316,6 +317,7 @@ def save_failed_email(dados):
             f.write('\n')
     except Exception as e:
         print(f"Erro ao salvar email falho: {e}")
+
 @app.route('/admin')
 @admin_required
 def admin_dashboard():
@@ -564,7 +566,7 @@ Recebido em {dados['data']}
         return jsonify({'error': 'Erro ao enviar mensagem'}), 500
 # -----------------------------------------------------------------------
 
-# Logo após as definições de Product e Admin
+@app.before_first_request
 def init_database():
     with app.app_context():
         try:
@@ -595,6 +597,7 @@ def init_database():
 
         except Exception as e:
             print(f"Erro na inicialização: {e}")
+
 @app.route('/enviar-contatoTEC', methods=['POST'])
 def enviar_contato_form():
    try:
@@ -697,7 +700,7 @@ if __name__ == '__main__':
                 print("Admin padrão já existe.")
 
             # Configura a porta e inicia o servidor
-            port = int(os.environ.get('PORT', 8080))  # Padrão para Fly.io
+            port = int(os.environ.get('PORT', 8080))  # Padrão para Fly.io ou outro
             print(f"Iniciando o servidor na porta {port}...")
             app.run(host='0.0.0.0', port=port)
         except Exception as e:

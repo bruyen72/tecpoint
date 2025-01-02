@@ -24,6 +24,15 @@ app = Flask(
     static_url_path=''
 )
 
+# --------------------------------------------------------------------
+# AJUSTE IMPORTANTE PARA USO DE SQLITE (ARQUIVO LOCAL)
+# --------------------------------------------------------------------
+# 1) Configure aqui o seu caminho do banco SQLite
+#    Caso queira colocar o arquivo em outro local, basta alterar.
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///meubanco.db'
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+# --------------------------------------------------------------------
+
 # Configuração do ambiente e diretórios
 if 'RENDER' in os.environ:
     UPLOAD_FOLDER = '/tmp/uploads'
@@ -308,6 +317,7 @@ def save_failed_email(dados):
             f.write('\n')
     except Exception as e:
         print(f"Erro ao salvar email falho: {e}")
+
 @app.route('/admin')
 @admin_required
 def admin_dashboard():
@@ -556,7 +566,6 @@ Recebido em {dados['data']}
         return jsonify({'error': 'Erro ao enviar mensagem'}), 500
 # -----------------------------------------------------------------------
 
-# Logo após as definições de Product e Admin
 @app.before_first_request
 def init_database():
     with app.app_context():
@@ -588,6 +597,7 @@ def init_database():
 
         except Exception as e:
             print(f"Erro na inicialização: {e}")
+
 @app.route('/enviar-contatoTEC', methods=['POST'])
 def enviar_contato_form():
    try:
@@ -690,7 +700,7 @@ if __name__ == '__main__':
                 print("Admin padrão já existe.")
 
             # Configura a porta e inicia o servidor
-            port = int(os.environ.get('PORT', 8080))  # Padrão para Fly.io
+            port = int(os.environ.get('PORT', 8080))  # Padrão para Fly.io ou outro
             print(f"Iniciando o servidor na porta {port}...")
             app.run(host='0.0.0.0', port=port)
         except Exception as e:
