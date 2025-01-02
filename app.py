@@ -489,11 +489,11 @@ def add_security_headers(response):
 @app.route('/enviar-contato-site', methods=['POST'])
 def enviar_contato_site():
     try:
-        # Validar se o corpo da requisição possui dados
+        print("Recebendo solicitação...")
         if not request.form:
+            print("Corpo da requisição está vazio!")
             return jsonify({'error': 'Requisição inválida ou corpo vazio'}), 400
 
-        # Capturar dados enviados pelo formulário
         dados = {
             'nome': request.form.get('name', '').strip(),
             'email': request.form.get('email', '').strip(),
@@ -501,12 +501,12 @@ def enviar_contato_site():
             'mensagem': request.form.get('message', '').strip(),
             'data': datetime.now().strftime('%d/%m/%Y às %H:%M')
         }
+        print(f"Dados recebidos: {dados}")
 
-        # Validar campos obrigatórios
         if not dados['nome'] or not dados['email'] or not dados['mensagem']:
+            print("Campos obrigatórios faltando!")
             return jsonify({'error': 'Campos obrigatórios não preenchidos'}), 400
 
-        # Criar o conteúdo HTML do email
         html_content = f'''
         <html>
         <body>
@@ -519,14 +519,15 @@ def enviar_contato_site():
         </body>
         </html>
         '''
+        print("Conteúdo HTML do email criado.")
 
-        # Enviar o email
         result = send_email(
             subject='Nova Mensagem - Contato do Site',
             html_content=html_content,
             to_email=EMAIL_CONFIG['SMTP_USERNAME'],
             reply_to=dados['email']
         )
+        print("Resultado do envio do email:", result)
 
         if result:
             return jsonify({'message': 'Mensagem enviada com sucesso!'}), 200
@@ -535,7 +536,8 @@ def enviar_contato_site():
 
     except Exception as e:
         print(f'Erro ao enviar mensagem de contato: {e}')
-        return jsonify({'error': 'Erro ao enviar a mensagem'}), 500
+        return jsonify({'error': f'Erro ao enviar mensagem: {str(e)}'}), 500
+
 
 # -----------------------------------------------------------------------
 
