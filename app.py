@@ -561,7 +561,7 @@ Recebido em {dados['data']}
 # -----------------------------------------------------------------------
 
 # Logo após as definições de Product e Admin
-@app.before_first_request
+
 def init_database():
     with app.app_context():
         try:
