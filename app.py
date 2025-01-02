@@ -15,21 +15,8 @@ from functools import wraps
 from email.utils import formataddr
 # Adicione esta linha para poder usar formatdate:
 from email.utils import formatdate
-import logging
-from PIL import Image
 
 
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
-def optimize_image(file_path):
-    """Otimiza imagens enviadas"""
-    try:
-        with Image.open(file_path) as img:
-            if img.size[0] > 1920 or img.size[1] > 1080:
-                img.thumbnail((1920, 1080), Image.LANCZOS)
-            img.save(file_path, optimize=True, quality=85)
-    except Exception as e:
-        logger.error(f"Erro ao otimizar imagem: {e}")
 # Inicialização do Flask
 app = Flask(
     __name__,
@@ -174,7 +161,7 @@ def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 def save_file(file):
-    """Salva arquivo com otimização"""
+    """Salva o arquivo com nome único"""
     if not file or not file.filename:
         return None
     if not allowed_file(file.filename):
@@ -183,23 +170,12 @@ def save_file(file):
         filename = secure_filename(file.filename)
         unique_filename = f"{uuid.uuid4()}_{filename}"
         file_path = os.path.join(app.config['UPLOAD_FOLDER'], unique_filename)
-        
-        # Salvar em chunks para arquivos grandes
-        chunk_size = 8192
-        with open(file_path, 'wb') as f:
-            while True:
-                chunk = file.stream.read(chunk_size)
-                if not chunk:
-                    break
-                f.write(chunk)
-                
-        # Otimizar se for imagem
-        if filename.lower().endswith(('.png', '.jpg', '.jpeg')):
-            optimize_image(file_path)
-            
+        file.save(file_path)
+        if app.debug:
+            os.chmod(file_path, 0o666)
         return unique_filename
     except Exception as e:
-        logger.error(f"Erro ao salvar arquivo: {e}")
+        print(f"Erro ao salvar arquivo: {e}")
         return None
 
 def delete_file(filename):
