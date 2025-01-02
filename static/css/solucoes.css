@@ -345,6 +345,26 @@ body {
     color: black;
     font-size: 0.9rem;
 }
+/* MAPA GPS */
+.mapa-section {
+    width: 100%;
+    background: var(--light);
+    padding: 4rem 0;
+}
+
+.mapa-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 1rem;
+}
+
+.mapa-frame {
+    width: 100%;
+    height: 450px;
+    border: none;
+    border-radius: 8px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+}
 
 /* Responsividade */
 @media(max-width:768px) {
