@@ -489,6 +489,11 @@ def add_security_headers(response):
 @app.route('/enviar-contato-site', methods=['POST'])
 def enviar_contato_site():
     try:
+        # Validar se o corpo da requisição possui dados
+        if not request.form:
+            return jsonify({'error': 'Requisição inválida ou corpo vazio'}), 400
+
+        # Capturar dados enviados pelo formulário
         dados = {
             'nome': request.form.get('name', '').strip(),
             'email': request.form.get('email', '').strip(),
@@ -497,7 +502,11 @@ def enviar_contato_site():
             'data': datetime.now().strftime('%d/%m/%Y às %H:%M')
         }
 
-        # Conteúdo do email
+        # Validar campos obrigatórios
+        if not dados['nome'] or not dados['email'] or not dados['mensagem']:
+            return jsonify({'error': 'Campos obrigatórios não preenchidos'}), 400
+
+        # Criar o conteúdo HTML do email
         html_content = f'''
         <html>
         <body>
@@ -511,7 +520,7 @@ def enviar_contato_site():
         </html>
         '''
 
-        # Envio do email
+        # Enviar o email
         result = send_email(
             subject='Nova Mensagem - Contato do Site',
             html_content=html_content,
