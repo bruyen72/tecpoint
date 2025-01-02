@@ -15,15 +15,27 @@ from functools import wraps
 from email.utils import formataddr
 # Adicione esta linha para poder usar formatdate:
 from email.utils import formatdate
-from PIL import Image
 import logging
+from PIL import Image
 
 
-# Inicialização do Flask
-app = Flask(__name__, static_folder='static', static_url_path='')
-# Configuração de logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+def optimize_image(file_path):
+    """Otimiza imagens enviadas"""
+    try:
+        with Image.open(file_path) as img:
+            if img.size[0] > 1920 or img.size[1] > 1080:
+                img.thumbnail((1920, 1080), Image.LANCZOS)
+            img.save(file_path, optimize=True, quality=85)
+    except Exception as e:
+        logger.error(f"Erro ao otimizar imagem: {e}")
+# Inicialização do Flask
+app = Flask(
+    __name__,
+    static_folder='static',
+    static_url_path=''
+)
 
 # --------------------------------------------------------------------
 # AJUSTE IMPORTANTE PARA USO NO RAILWAY (OU AMBIENTE COM 'DATABASE_URL')
@@ -61,52 +73,9 @@ except OSError as e:
 app.config.update(
     SECRET_KEY=os.urandom(24),
     UPLOAD_FOLDER=UPLOAD_FOLDER,
-    MAX_CONTENT_LENGTH=50 * 1024 * 1024,  # 50MB
-    SQLALCHEMY_DATABASE_URI=db_uri,
-    SQLALCHEMY_TRACK_MODIFICATIONS=False,
-    SQLALCHEMY_ENGINE_OPTIONS={
-        'pool_size': 5,
-        'pool_timeout': 30,
-        'pool_recycle': 1800
-    },
-    SEND_FILE_MAX_AGE_DEFAULT=31536000
+    MAX_CONTENT_LENGTH=50 * 1024 * 1024  # 50MB
 )
-#otimizar de cache e headers
-@app.after_request
-def add_headers(response):
-    """Adiciona headers otimizados"""
-    # Cache para arquivos estáticos
-    if 'Cache-Control' not in response.headers:
-        response.headers['Cache-Control'] = 'public, max-age=31536000'
-    
-    # Headers de segurança
-    response.headers.update({
-        'X-Content-Type-Options': 'nosniff',
-        'X-Frame-Options': 'SAMEORIGIN',
-        'X-XSS-Protection': '1; mode=block',
-        'Vary': 'Accept-Encoding'
-    })
-    return response
 
-@app.route('/static/<path:filename>')
-def serve_static(filename):
-    """Serve arquivos estáticos com cache"""
-    response = send_from_directory('static', filename)
-    response.headers['Cache-Control'] = 'public, max-age=31536000'
-    return response
-# otimizacao de imagem 
-def optimize_image(file_path):
-    """Otimiza imagens enviadas"""
-    try:
-        with Image.open(file_path) as img:
-            # Redimensionar se muito grande
-            if img.size[0] > 1920 or img.size[1] > 1080:
-                img.thumbnail((1920, 1080), Image.LANCZOS)
-            
-            # Otimizar e salvar
-            img.save(file_path, optimize=True, quality=85)
-    except Exception as e:
-        logger.error(f"Erro ao otimizar imagem: {e}")
 # Funções auxiliares para metadados
 def save_file_metadata(filename, filesize):
     metadata = load_metadata()
@@ -205,7 +174,7 @@ def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 def save_file(file):
-    """Salva o arquivo com nome único"""
+    """Salva arquivo com otimização"""
     if not file or not file.filename:
         return None
     if not allowed_file(file.filename):
@@ -214,12 +183,23 @@ def save_file(file):
         filename = secure_filename(file.filename)
         unique_filename = f"{uuid.uuid4()}_{filename}"
         file_path = os.path.join(app.config['UPLOAD_FOLDER'], unique_filename)
-        file.save(file_path)
-        if app.debug:
-            os.chmod(file_path, 0o666)
+        
+        # Salvar em chunks para arquivos grandes
+        chunk_size = 8192
+        with open(file_path, 'wb') as f:
+            while True:
+                chunk = file.stream.read(chunk_size)
+                if not chunk:
+                    break
+                f.write(chunk)
+                
+        # Otimizar se for imagem
+        if filename.lower().endswith(('.png', '.jpg', '.jpeg')):
+            optimize_image(file_path)
+            
         return unique_filename
     except Exception as e:
-        print(f"Erro ao salvar arquivo: {e}")
+        logger.error(f"Erro ao salvar arquivo: {e}")
         return None
 
 def delete_file(filename):
