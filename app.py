@@ -121,52 +121,52 @@ class Admin(db.Model):
 
 # Função de envio de email otimizada# Email Config
 # No início do arquivo, após os imports
+# No início do arquivo, após os imports
 EMAIL_CONFIG = {
-    'SMTP_SERVER': os.getenv('SMTP_SERVER', 'smtps.uhserver.com'),
-    'SMTP_PORT': int(os.getenv('SMTP_PORT', 465)),
-    'SMTP_USERNAME': os.getenv('SMTP_USERNAME', 'contato@tecpoint.net.br'),
-    'SMTP_PASSWORD': os.getenv('SMTP_PASSWORD', 'tecpoint@2024B'),
+    'SMTP_SERVER': 'mail.uhserver.com',
+    'SMTP_PORT': 587,
+    'SMTP_USERNAME': 'contato@tecpoint.net.br',
+    'SMTP_PASSWORD': 'tecpoint@2024B',
     'DOMAIN': 'tecpoint.net.br'
 }
 
-def send_email_with_retry(subject, text_content, html_content, recipient, max_retries=3):
-    msg = MIMEMultipart('alternative')
-    msg['Subject'] = subject
-    msg['From'] = formataddr(("TecPoint", EMAIL_CONFIG['SMTP_USERNAME']))
-    msg['To'] = recipient
-    msg['Date'] = formatdate(localtime=True)
-    msg['Message-ID'] = make_msgid(domain=EMAIL_CONFIG['DOMAIN'])
-    msg.add_header('Reply-To', recipient)
-    
-    # Adiciona conteúdo
-    msg.attach(MIMEText(text_content, 'plain', 'utf-8'))
-    msg.attach(MIMEText(html_content, 'html', 'utf-8'))
+# Remover todas as outras definições SMTP_SERVER, etc.
 
-    for attempt in range(max_retries):
-        try:
-            # Tenta com SSL
-            with smtplib.SMTP_SSL(EMAIL_CONFIG['SMTP_SERVER'], EMAIL_CONFIG['SMTP_PORT'], timeout=30) as server:
-                server.ehlo(EMAIL_CONFIG['DOMAIN'])
-                server.login(EMAIL_CONFIG['SMTP_USERNAME'], EMAIL_CONFIG['SMTP_PASSWORD'])
-                server.send_message(msg)
-                return True
-        except Exception as e1:
-            print(f"Tentativa SSL falhou: {e1}")
+def send_email(subject, html_content, to_email, reply_to=None):
+    try:
+        msg = MIMEMultipart('alternative')
+        msg['Subject'] = subject
+        msg['From'] = formataddr(("TecPoint", EMAIL_CONFIG['SMTP_USERNAME']))
+        msg['To'] = to_email
+        msg['Date'] = formatdate(localtime=True)
+        msg['Message-ID'] = make_msgid(domain=EMAIL_CONFIG['DOMAIN'])
+        
+        if reply_to:
+            msg.add_header('Reply-To', reply_to)
+
+        # Versão texto
+        text_content = html_content.replace('<br>', '\n').replace('</p>', '\n')
+        text_content = re.sub('<[^>]+>', '', text_content)
+        
+        msg.attach(MIMEText(text_content, 'plain', 'utf-8'))
+        msg.attach(MIMEText(html_content, 'html', 'utf-8'))
+
+        for attempt in range(3):
             try:
-                # Tenta com TLS
-                with smtplib.SMTP(EMAIL_CONFIG['SMTP_SERVER'], 587, timeout=30) as server:
-                    server.ehlo(EMAIL_CONFIG['DOMAIN'])
+                with smtplib.SMTP(EMAIL_CONFIG['SMTP_SERVER'], EMAIL_CONFIG['SMTP_PORT']) as server:
                     server.starttls()
-                    server.ehlo()
                     server.login(EMAIL_CONFIG['SMTP_USERNAME'], EMAIL_CONFIG['SMTP_PASSWORD'])
                     server.send_message(msg)
+                    print(f"Email enviado com sucesso para {to_email}")
                     return True
-            except Exception as e2:
-                print(f"Tentativa {attempt + 1} falhou: {e2}")
-                if attempt == max_retries - 1:
-                    return False
+            except Exception as e:
+                print(f"Tentativa {attempt + 1} falhou: {e}")
+                if attempt == 2:
+                    raise
                 time.sleep(2)
-    return False
+    except Exception as e:
+        print(f"Erro ao enviar email: {e}")
+        return False
 # Funções auxiliares
 def ensure_upload_dir():
     """Garante que o diretório de uploads existe"""
@@ -508,61 +508,26 @@ def enviar_contato_site():
 
         html_content = f"""
         <html>
-        <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
-            <div style="background-color: #00A859; padding: 20px; text-align: center; border-radius: 8px 8px 0 0;">
-                <h2 style="color: white; margin: 0;">Nova Mensagem do Site</h2>
-            </div>
-            
-            <div style="background-color: #f9f9f9; padding: 20px; border-radius: 0 0 8px 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-                <div style="margin-bottom: 20px;">
-                    <h3 style="color: #00A859; border-bottom: 2px solid #00A859; padding-bottom: 8px;">Dados do Cliente</h3>
-                    <p><strong>Nome:</strong> {dados['nome']}</p>
-                    <p><strong>Email:</strong> {dados['email']}</p>
-                    <p><strong>Telefone:</strong> {dados['telefone'] or 'Não informado'}</p>
-                </div>
-
-                <div style="margin-bottom: 20px;">
-                    <h3 style="color: #00A859; border-bottom: 2px solid #00A859; padding-bottom: 8px;">Mensagem</h3>
-                    <p style="white-space: pre-wrap;">{dados['mensagem']}</p>
-                </div>
-
-                <div style="text-align: center; color: #666; font-style: italic; margin-top: 20px; padding-top: 20px; border-top: 1px solid #eee;">
-                    Mensagem recebida em {dados['data']}
-                </div>
-            </div>
+        <body style="font-family: Arial, sans-serif;">
+            <h2>Nova Mensagem do Site</h2>
+            <p><strong>Nome:</strong> {dados['nome']}</p>
+            <p><strong>Email:</strong> {dados['email']}</p>
+            <p><strong>Telefone:</strong> {dados['telefone'] or 'Não informado'}</p>
+            <p><strong>Mensagem:</strong><br>{dados['mensagem']}</p>
+            <p>Recebido em {dados['data']}</p>
         </body>
         </html>
         """
 
-        msg = MIMEMultipart('alternative')
-        msg['Subject'] = 'Nova Mensagem - Site TecPoint'
-        msg['From'] = formataddr(("TecPoint Soluções", SMTP_USERNAME))
-        msg['To'] = SMTP_USERNAME
-        msg.add_header('Reply-To', dados['email'])
-
-        # Versão texto
-        text_content = f"""
-NOVA MENSAGEM DO SITE
-
-Dados do Cliente:
-Nome: {dados['nome']}
-Email: {dados['email']}
-Telefone: {dados['telefone']}
-
-Mensagem:
-{dados['mensagem']}
-
-Recebido em {dados['data']}
-"""
-        msg.attach(MIMEText(text_content, 'plain', 'utf-8'))
-        msg.attach(MIMEText(html_content, 'html', 'utf-8'))
-
-        with smtplib.SMTP_SSL(SMTP_SERVER, SMTP_PORT) as server:
-            server.ehlo()
-            server.login(SMTP_USERNAME, SMTP_PASSWORD)
-            server.send_message(msg)
-            
-        return jsonify({'message': 'Mensagem enviada com sucesso!'}), 200
+        if send_email(
+            'Nova Mensagem - Site TecPoint',
+            html_content,
+            EMAIL_CONFIG['SMTP_USERNAME'],
+            dados['email']
+        ):
+            return jsonify({'message': 'Mensagem enviada com sucesso!'}), 200
+        else:
+            return jsonify({'error': 'Erro ao enviar mensagem'}), 500
 
     except Exception as e:
         print(f'Erro: {e}')
