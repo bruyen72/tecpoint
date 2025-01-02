@@ -564,79 +564,43 @@ def init_database():
 
 @app.route('/enviar-contatoTEC', methods=['POST'])
 def enviar_contato_form():
-   try:
-       dados = {
-           'nome': request.form.get('name', '').strip(),
-           'email': request.form.get('email', '').strip(),
-           'telefone': request.form.get('phone', '').strip(),
-           'mensagem': request.form.get('message', '').strip(),
-           'data': datetime.now().strftime('%d/%m/%Y às %H:%M')
-       }
+    try:
+        dados = {
+            'nome': request.form.get('name', '').strip(),
+            'email': request.form.get('email', '').strip(),
+            'telefone': request.form.get('phone', '').strip(),
+            'mensagem': request.form.get('message', '').strip(),
+            'data': datetime.now().strftime('%d/%m/%Y às %H:%M')
+        }
 
-       if not all([dados['nome'], dados['email'], dados['mensagem']]):
-           return jsonify({'error': 'Por favor, preencha todos os campos obrigatórios'}), 400
+        html_content = f'''
+        <html>
+        <body>
+            <h2>Nova Mensagem do Site</h2>
+            <p><strong>Nome:</strong> {dados['nome']}</p>
+            <p><strong>Email:</strong> {dados['email']}</p>
+            <p><strong>Telefone:</strong> {dados['telefone']}</p>
+            <p><strong>Mensagem:</strong><br>{dados['mensagem']}</p>
+            <p>Recebido em {dados['data']}</p>
+        </body>
+        </html>
+        '''
 
-       html_content = f"""
-       <html>
-       <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
-           <div style="background-color: #00A859; padding: 20px; text-align: center; border-radius: 8px 8px 0 0;">
-               <h2 style="color: white; margin: 0;">Nova Mensagem do Site</h2>
-           </div>
-           
-           <div style="background-color: #f9f9f9; padding: 20px; border-radius: 0 0 8px 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-               <div style="margin-bottom: 20px;">
-                   <h3 style="color: #00A859; border-bottom: 2px solid #00A859; padding-bottom: 8px;">Dados do Cliente</h3>
-                   <p><strong>Nome:</strong> {dados['nome']}</p>
-                   <p><strong>Email:</strong> {dados['email']}</p>
-                   <p><strong>Telefone:</strong> {dados['telefone'] or 'Não informado'}</p>
-               </div>
+        result = send_email(
+            'Nova Mensagem - Site TecPoint',
+            html_content,
+            EMAIL_CONFIG['SMTP_USERNAME'],
+            dados['email']
+        )
 
-               <div style="margin-bottom: 20px;">
-                   <h3 style="color: #00A859; border-bottom: 2px solid #00A859; padding-bottom: 8px;">Mensagem</h3>
-                   <p style="white-space: pre-wrap;">{dados['mensagem']}</p>
-               </div>
+        if result:
+            return jsonify({'message': 'Mensagem enviada com sucesso!'}), 200
+        else:
+            return jsonify({'error': 'Erro ao enviar mensagem'}), 500
 
-               <div style="text-align: center; color: #666; font-style: italic; margin-top: 20px; padding-top: 20px; border-top: 1px solid #eee;">
-                   Mensagem recebida em {dados['data']}<br>
-                   Enviado através do formulário de contato
-               </div>
-           </div>
-       </body>
-       </html>
-       """
-
-       msg = MIMEMultipart('alternative')
-       msg['Subject'] = 'Nova Mensagem - Site TecPoint'
-       msg['From'] = formataddr(("TecPoint Soluções", SMTP_USERNAME))
-       msg['To'] = SMTP_USERNAME
-       msg.add_header('Reply-To', dados['email'])
-
-       text_content = f"""
-NOVA MENSAGEM DO SITE
-
-Dados do Cliente:
-Nome: {dados['nome']}
-Email: {dados['email']}
-Telefone: {dados['telefone']}
-
-Mensagem:
-{dados['mensagem']}
-
-Recebido em {dados['data']}
-"""
-       msg.attach(MIMEText(text_content, 'plain', 'utf-8'))
-       msg.attach(MIMEText(html_content, 'html', 'utf-8'))
-
-       with smtplib.SMTP_SSL(SMTP_SERVER, SMTP_PORT) as server:
-           server.ehlo()
-           server.login(SMTP_USERNAME, SMTP_PASSWORD)
-           server.send_message(msg)
-
-       return jsonify({'message': 'Mensagem enviada com sucesso!'}), 200
-
-   except Exception as e:
-       print(f'Erro ao enviar mensagem: {e}')
-       return jsonify({'error': 'Erro ao enviar mensagem'}), 500
+    except Exception as e:
+        print(f'Erro completo: {e}')
+        return jsonify({'error': 'Erro ao enviar mensagem'}), 500
 
 # ------------------------------------------------------------------------
 # FIM NOVA ROTA
