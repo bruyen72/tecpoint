@@ -119,33 +119,35 @@ class Admin(db.Model):
     username = db.Column(db.String(80), unique=True, nullable=False)
     password_hash = db.Column(db.String(120), nullable=False)
 
-# Função de envio de email otimizada
+# Função de envio de email otimizada# Email Config
+EMAIL_CONFIG = {
+    'SMTP_SERVER': 'mail.uhserver.com',  # Mudou o servidor
+    'SMTP_PORT': 587,                    # Manteve a porta
+    'USE_TLS': True,                     # Adicionou TLS
+    'SMTP_USERNAME': 'contato@tecpoint.net.br',
+    'SMTP_PASSWORD': 'tecpoint@2024B'
+}
 def send_email_with_retry(subject, text_content, html_content, recipient, is_internal=False, max_retries=3):
-    """Função de envio de email com suporte HTML melhorado"""
     try:
-        # Criar mensagem com partes alternativas
         msg = MIMEMultipart('alternative')
         msg['Subject'] = subject
-        msg['From'] = SMTP_USERNAME
+        msg['From'] = formataddr(("TecPoint Soluções", EMAIL_CONFIG['SMTP_USERNAME']))
         msg['To'] = recipient
-        msg['Date'] = email.utils.formatdate(localtime=True)
-
-        # Exibir nome amigável no FROM
-        msg['From'] = formataddr(("TecPoint Soluções", SMTP_USERNAME))
-
-        # Adiciona as versões texto e HTML
+        msg['Date'] = formatdate(localtime=True)
+        msg['Message-ID'] = email.utils.make_msgid(domain='tecpoint.net.br')
+        
         part1 = MIMEText(text_content, 'plain', 'utf-8')
         part2 = MIMEText(html_content, 'html', 'utf-8')
         msg.attach(part1)
         msg.attach(part2)
 
-        # Tenta enviar
         for attempt in range(max_retries):
             try:
-                with smtplib.SMTP_SSL(SMTP_SERVER, SMTP_PORT) as server:
+                with smtplib.SMTP(EMAIL_CONFIG['SMTP_SERVER'], EMAIL_CONFIG['SMTP_PORT']) as server:
                     server.ehlo()
-                    server.login(SMTP_USERNAME, SMTP_PASSWORD)
-                    server.sendmail(SMTP_USERNAME, [recipient], msg.as_string())
+                    server.starttls()  # Ativa TLS
+                    server.login(EMAIL_CONFIG['SMTP_USERNAME'], EMAIL_CONFIG['SMTP_PASSWORD'])
+                    server.send_message(msg)
                     print(f"Email enviado para {recipient}")
                     return True
             except Exception as e:
