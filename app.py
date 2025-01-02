@@ -24,6 +24,24 @@ app = Flask(
     static_url_path=''
 )
 
+# --------------------------------------------------------------------
+# AJUSTE IMPORTANTE PARA USO NO RAILWAY (OU AMBIENTE COM 'DATABASE_URL')
+# --------------------------------------------------------------------
+# Se 'DATABASE_URL' estiver definido (Railway/Postgres, Heroku etc.),
+# use-o; caso contrário, use SQLite local (local.db).
+db_uri = os.getenv('DATABASE_URL', 'sqlite:///local.db')
+
+# Correção caso seja 'postgres://' e não 'postgresql://'
+# (Heroku, Railway podem gerar 'postgres://' deprecado)
+if db_uri.startswith('postgres://'):
+    db_uri = db_uri.replace('postgres://', 'postgresql://', 1)
+
+app.config['SQLALCHEMY_DATABASE_URI'] = db_uri
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
+print("=== Usando DB URI:", app.config['SQLALCHEMY_DATABASE_URI'])
+# --------------------------------------------------------------------
+
 # Configuração do ambiente e diretórios
 if 'RENDER' in os.environ:
     UPLOAD_FOLDER = '/tmp/uploads'
@@ -278,8 +296,7 @@ def enviar_cotacao():
         """
         msg_empresa.attach(MIMEText(html_empresa, 'html', 'utf-8'))
 
-        # Enviar usando SSL/TLS
-        with smtplib.SMTP_SSL('smtps.uhserver.com', 465) as server:
+        with smtplib.SMTP_SSL(SMTP_SERVER, SMTP_PORT) as server:
             server.login(SMTP_USERNAME, SMTP_PASSWORD)
             server.send_message(msg_empresa)
 
@@ -308,6 +325,7 @@ def save_failed_email(dados):
             f.write('\n')
     except Exception as e:
         print(f"Erro ao salvar email falho: {e}")
+
 @app.route('/admin')
 @admin_required
 def admin_dashboard():
@@ -343,7 +361,6 @@ def admin_logout():
 def admin_add_product():
     if request.method == 'POST':
         try:
-            # Dados do formulário
             form_data = {
                 'name': request.form.get('name'),
                 'description': request.form.get('description'),
@@ -353,28 +370,23 @@ def admin_add_product():
                 'pdf': request.files.get('pdf'),
                 'additional_files': request.files.getlist('images')
             }
-            # Validações
             if not all([form_data['name'], form_data['description'], 
                        form_data['category'], form_data['image']]):
                 flash('Preencha todos os campos obrigatórios')
                 return redirect(url_for('admin_add_product'))
 
-            # Processa especificações
             specs = [s.strip() for s in form_data['specs'] if s.strip()]
             if not specs:
                 flash('Adicione pelo menos uma especificação')
                 return redirect(url_for('admin_add_product'))
 
-            # Salva imagem principal
             image_filename = save_file(form_data['image'])
             if not image_filename:
                 flash('Erro ao salvar imagem principal')
                 return redirect(url_for('admin_add_product'))
 
-            # Salva PDF se existir
             pdf_filename = save_file(form_data['pdf']) if form_data['pdf'] else None
 
-            # Processa imagens adicionais
             additional_images = []
             for f in form_data['additional_files']:
                 if f:
@@ -382,7 +394,6 @@ def admin_add_product():
                     if img_name:
                         additional_images.append(img_name)
 
-            # Cria produto
             product = Product(
                 name=form_data['name'],
                 description=form_data['description'],
@@ -392,7 +403,6 @@ def admin_add_product():
                 pdf_path=pdf_filename,
                 image_paths=json.dumps(additional_images) if additional_images else None
             )
-
             db.session.add(product)
             db.session.commit()
             flash('Produto adicionado com sucesso!')
@@ -412,13 +422,10 @@ def admin_delete_product(id):
     product = Product.query.get_or_404(id)
     
     try:
-        # Remove arquivos
         if product.image_path:
             delete_file(product.image_path)
-            
         if product.pdf_path:
             delete_file(product.pdf_path)
-
         if product.image_paths:
             try:
                 extra_images = json.loads(product.image_paths)
@@ -450,13 +457,11 @@ def uploaded_file(filename):
         if not os.path.exists(file_path):
             print(f"Arquivo não encontrado: {filename}")
             return "Arquivo não encontrado", 404
-            
         return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
     except Exception as e:
         print(f"Erro ao servir arquivo {filename}: {e}")
         return "Erro ao acessar arquivo", 500
 
-# Tratamento de erros
 @app.errorhandler(404)
 def page_not_found(e):
     return render_template('404.html'), 404
@@ -470,7 +475,6 @@ def request_entity_too_large(e):
     flash('O arquivo enviado é muito grande. Por favor, reduza o tamanho.')
     return redirect(url_for('admin_add_product'))
 
-# Configurações de segurança adicionais
 @app.after_request
 def add_security_headers(response):
     response.headers['X-Content-Type-Options'] = 'nosniff'
@@ -575,6 +579,8 @@ def init_database():
                 db.session.add(admin)
                 db.session.commit()
                 print("Admin criado com sucesso!")
+            else:
+                print("Admin padrão já existe.")
 
             # Verificar se existem produtos
             produtos_count = Product.query.count()
@@ -588,6 +594,7 @@ def init_database():
 
         except Exception as e:
             print(f"Erro na inicialização: {e}")
+
 @app.route('/enviar-contatoTEC', methods=['POST'])
 def enviar_contato_form():
    try:
@@ -690,7 +697,7 @@ if __name__ == '__main__':
                 print("Admin padrão já existe.")
 
             # Configura a porta e inicia o servidor
-            port = int(os.environ.get('PORT', 8080))  # Padrão para Fly.io
+            port = int(os.environ.get('PORT', 8080))  # Padrão para Fly.io ou Railway
             print(f"Iniciando o servidor na porta {port}...")
             app.run(host='0.0.0.0', port=port)
         except Exception as e:
