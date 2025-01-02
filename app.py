@@ -120,30 +120,40 @@ class Admin(db.Model):
     password_hash = db.Column(db.String(120), nullable=False)
 
 # Função de envio de email otimizada
-# Primeiro, definir uma única função de envio
-def send_email(subject, html_content, to_email, reply_to=None):
+def send_email_with_retry(subject, text_content, html_content, recipient, is_internal=False, max_retries=3):
+    """Função de envio de email com suporte HTML melhorado"""
     try:
+        # Criar mensagem com partes alternativas
         msg = MIMEMultipart('alternative')
         msg['Subject'] = subject
-        msg['From'] = formataddr(("TecPoint", SMTP_USERNAME))
-        msg['To'] = to_email
-        msg['Date'] = formatdate(localtime=True)
-        
-        if reply_to:
-            msg.add_header('Reply-To', reply_to)
+        msg['From'] = SMTP_USERNAME
+        msg['To'] = recipient
+        msg['Date'] = email.utils.formatdate(localtime=True)
 
-        # Gera versão texto do HTML
-        text_content = html_content.replace('<br>', '\n').replace('</p>', '\n')
-        
-        msg.attach(MIMEText(text_content, 'plain', 'utf-8'))
-        msg.attach(MIMEText(html_content, 'html', 'utf-8'))
+        # Exibir nome amigável no FROM
+        msg['From'] = formataddr(("TecPoint Soluções", SMTP_USERNAME))
 
-        with smtplib.SMTP_SSL(SMTP_SERVER, SMTP_PORT, timeout=30) as server:
-            server.ehlo()
-            server.login(SMTP_USERNAME, SMTP_PASSWORD)
-            server.send_message(msg)
-            return True
-            
+        # Adiciona as versões texto e HTML
+        part1 = MIMEText(text_content, 'plain', 'utf-8')
+        part2 = MIMEText(html_content, 'html', 'utf-8')
+        msg.attach(part1)
+        msg.attach(part2)
+
+        # Tenta enviar
+        for attempt in range(max_retries):
+            try:
+                with smtplib.SMTP_SSL(SMTP_SERVER, SMTP_PORT) as server:
+                    server.ehlo()
+                    server.login(SMTP_USERNAME, SMTP_PASSWORD)
+                    server.sendmail(SMTP_USERNAME, [recipient], msg.as_string())
+                    print(f"Email enviado para {recipient}")
+                    return True
+            except Exception as e:
+                print(f"Tentativa {attempt + 1} falhou: {e}")
+                if attempt == max_retries - 1:
+                    return False
+                time.sleep(2)
+        return False
     except Exception as e:
         print(f"Erro ao enviar email: {e}")
         return False
@@ -211,9 +221,9 @@ def json_loads_filter(json_string):
 def index():
     return render_template('index.html')
 
-@app.route('/solucoes')
-def solucoes():
-    return render_template('solucoes.html')
+@app.route('/servicos')
+def servicos():
+    return render_template('servicos.html')
 
 @app.route('/contato')
 def contato():
