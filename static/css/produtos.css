@@ -418,6 +418,19 @@ body {
     color: black;
     font-size: 0.9rem;
 }
+/* efeitos de fundo1 */
+.bg-line-1 {
+    top: 20%;
+}
+
+.bg-line-2 {
+    top: 50%;
+}
+
+.bg-line-3 {
+    top: 80%;
+}
+
 
 @media(max-width:768px) {
     .mobile-toggle {
