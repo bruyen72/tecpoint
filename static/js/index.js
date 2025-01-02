@@ -6,54 +6,33 @@ function sendContactEmail(event) {
     const buttonText = button.querySelector('.button-text');
     const buttonLoading = button.querySelector('.button-loading');
 
-    // Obter os valores do formulário
-    const name = document.getElementById('contact_name').value.trim();
-    const email = document.getElementById('contact_email').value.trim();
-    const phone = document.getElementById('contact_phone').value.trim();
-    const message = document.getElementById('contact_message').value.trim();
-
-    // Validação simples dos campos
-    if (!name || !email || !message) {
-        alert('Por favor, preencha os campos obrigatórios (nome, email, mensagem).');
-        return false;
-    }
-
     const formData = new FormData();
-    formData.append('name', name);
-    formData.append('email', email);
-    formData.append('phone', phone);
-    formData.append('message', message);
+    formData.append('name', document.getElementById('contact_name').value);
+    formData.append('email', document.getElementById('contact_email').value);
+    formData.append('phone', document.getElementById('contact_phone').value);
+    formData.append('message', document.getElementById('contact_message').value);
 
-    // Desabilitar o botão e mostrar o loading
     button.disabled = true;
     buttonText.style.display = 'none';
     buttonLoading.style.display = 'inline-block';
 
-    // Fazer a requisição para a rota do backend
     fetch('/enviar-contato-site', {
         method: 'POST',
         body: formData
     })
-    .then(response => {
-        if (!response.ok) {
-            throw new Error('Erro na comunicação com o servidor.');
-        }
-        return response.json();
-    })
+    .then(response => response.json())
     .then(data => {
         if (data.message) {
             alert('Mensagem enviada com sucesso!');
             document.getElementById('contactForm').reset();
         } else {
-            throw new Error(data.error || 'Erro desconhecido.');
+            throw new Error(data.error || 'Erro ao enviar mensagem');
         }
     })
     .catch(error => {
-        console.error('Erro:', error);
         alert('Erro ao enviar mensagem. Tente novamente.');
     })
     .finally(() => {
-        // Reabilitar o botão e restaurar o estado
         button.disabled = false;
         buttonText.style.display = 'inline-block';
         buttonLoading.style.display = 'none';
