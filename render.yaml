@@ -1,15 +1,15 @@
 services:
   - type: web
-    name: tecpoint
-    env: python
-    buildCommand: "pip install -r requirements.txt"
-    startCommand: "gunicorn app:app --bind 0.0.0.0:$PORT"
+    name: tecpoint  # Nome do serviço
+    env: python  # Ambiente Python
+    buildCommand: "pip install -r requirements.txt"  # Comando para instalar dependências
+    startCommand: "gunicorn app:app --bind 0.0.0.0:$PORT"  # Comando para iniciar o servidor
     mounts:
-      - path: /var/lib/sqlite
+      - path: /var/lib/sqlite  # Configuração de volume persistente
         name: tecpoint-sqlite
-    plan: standard
     envVars:
       - key: FLASK_ENV
-        value: production
-      - key: SECRET_KEY
-        generateValue: true
+        value: production  # Define o ambiente como produção
+      - key: PORT
+        value: 5000  # A porta será substituída automaticamente pelo Render
+    plan: free  # Define o plano gratuito
