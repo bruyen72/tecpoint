@@ -15,7 +15,6 @@ from functools import wraps
 from email.utils import formataddr
 # Adicione esta linha para poder usar formatdate:
 from email.utils import formatdate
-import logging
 
 
 # Inicialização do Flask
@@ -63,6 +62,7 @@ app.config.update(
     UPLOAD_FOLDER=UPLOAD_FOLDER,
     MAX_CONTENT_LENGTH=50 * 1024 * 1024  # 50MB
 )
+
 # Funções auxiliares para metadados
 def save_file_metadata(filename, filesize):
     metadata = load_metadata()
@@ -221,17 +221,12 @@ def contato():
 
 @app.route('/produtos')
 def produtos():
-    try:
-        category = request.args.get('category', 'all')
-        if category == 'all':
-            products = Product.query.order_by(Product.created_at.desc()).all()
-        else:
-            products = Product.query.filter_by(category=category).order_by(Product.created_at.desc()).all()
-        
-        return render_template('produtos.html', products=products, current_category=category)
-    except Exception as e:
-        print(f"Erro ao carregar produtos: {e}")  # Alterado de logger.error para print
-        return render_template('500.html'), 500
+    category = request.args.get('category', 'all')
+    if category == 'all':
+        products = Product.query.order_by(Product.created_at.desc()).all()
+    else:
+        products = Product.query.filter_by(category=category).order_by(Product.created_at.desc()).all()
+    return render_template('produtos.html', products=products, current_category=category)
 
 @app.route('/produto/<int:id>')
 def produto_detalhe(id):
