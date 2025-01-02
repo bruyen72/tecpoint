@@ -140,26 +140,18 @@ def send_email(subject, html_content, to_email, reply_to=None):
         msg['From'] = formataddr(("TecPoint", EMAIL_CONFIG['SMTP_USERNAME']))
         msg['To'] = to_email
         msg['Date'] = formatdate(localtime=True)
-        
+
         if reply_to:
             msg.add_header('Reply-To', reply_to)
 
-        # Versão texto (correção do erro do 're')
-        text_content = html_content.replace('<br>', '\n').replace('</p>', '\n')
-        if re:  # Verifica se re está definido
-            text_content = re.sub('<[^>]+>', '', text_content)
-        
-        msg.attach(MIMEText(text_content, 'plain', 'utf-8'))
         msg.attach(MIMEText(html_content, 'html', 'utf-8'))
 
-        with smtplib.SMTP(EMAIL_CONFIG['SMTP_SERVER'], EMAIL_CONFIG['SMTP_PORT'], timeout=30) as server:
-            server.starttls()
+        with smtplib.SMTP_SSL(EMAIL_CONFIG['SMTP_SERVER'], EMAIL_CONFIG['SMTP_PORT'], timeout=15) as server:
             server.login(EMAIL_CONFIG['SMTP_USERNAME'], EMAIL_CONFIG['SMTP_PASSWORD'])
             server.send_message(msg)
-            print(f"Email enviado com sucesso para {to_email}")
-            return True
+        return True
     except Exception as e:
-        print(f"Erro detalhado ao enviar email: {str(e)}")
+        print(f"Erro ao enviar email: {e}")
         return False
 # Funções auxiliares
 def ensure_upload_dir():
@@ -489,11 +481,6 @@ def add_security_headers(response):
 @app.route('/enviar-contato-site', methods=['POST'])
 def enviar_contato_site():
     try:
-        print("Recebendo solicitação...")
-        if not request.form:
-            print("Corpo da requisição está vazio!")
-            return jsonify({'error': 'Requisição inválida ou corpo vazio'}), 400
-
         dados = {
             'nome': request.form.get('name', '').strip(),
             'email': request.form.get('email', '').strip(),
@@ -501,13 +488,12 @@ def enviar_contato_site():
             'mensagem': request.form.get('message', '').strip(),
             'data': datetime.now().strftime('%d/%m/%Y às %H:%M')
         }
-        print(f"Dados recebidos: {dados}")
 
+        # Validações
         if not dados['nome'] or not dados['email'] or not dados['mensagem']:
-            print("Campos obrigatórios faltando!")
             return jsonify({'error': 'Campos obrigatórios não preenchidos'}), 400
 
-        html_content = f'''
+        html_content = f"""
         <html>
         <body>
             <h2>Nova Mensagem de Contato do Site</h2>
@@ -518,25 +504,17 @@ def enviar_contato_site():
             <p>Recebido em {dados['data']}</p>
         </body>
         </html>
-        '''
-        print("Conteúdo HTML do email criado.")
+        """
 
-        result = send_email(
-            subject='Nova Mensagem - Contato do Site',
-            html_content=html_content,
-            to_email=EMAIL_CONFIG['SMTP_USERNAME'],
-            reply_to=dados['email']
-        )
-        print("Resultado do envio do email:", result)
-
-        if result:
+        # Enviar Email
+        if send_email('Nova Mensagem - Contato do Site', html_content, EMAIL_CONFIG['SMTP_USERNAME'], reply_to=dados['email']):
             return jsonify({'message': 'Mensagem enviada com sucesso!'}), 200
         else:
             return jsonify({'error': 'Erro ao enviar a mensagem'}), 500
 
     except Exception as e:
-        print(f'Erro ao enviar mensagem de contato: {e}')
-        return jsonify({'error': f'Erro ao enviar mensagem: {str(e)}'}), 500
+        print(f"Erro ao enviar mensagem de contato: {e}")
+        return jsonify({'error': 'Erro interno no servidor'}), 500
 
 
 # -----------------------------------------------------------------------
