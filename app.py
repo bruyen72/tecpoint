@@ -94,7 +94,7 @@ def allowed_file(filename):
 
 # Configurações de Email
 SMTP_SERVER = 'smtps.uhserver.com'
-SMTP_PORT = 465
+SMTP_PORT = 587
 SMTP_USERNAME = 'contato@tecpoint.net.br'
 SMTP_PASSWORD = 'tecpoint@2024B'
 
@@ -120,36 +120,40 @@ class Admin(db.Model):
     password_hash = db.Column(db.String(120), nullable=False)
 
 # Função de envio de email otimizada
-# Adicione estas configurações no início do arquivo
-EMAIL_CONFIG = {
-    'SMTP_SERVER': 'smtps.uhserver.com',
-    'SMTP_PORT': 465,
-    'SMTP_USERNAME': 'contato@tecpoint.net.br',
-    'SMTP_PASSWORD': 'tecpoint@2024B',
-    'DISPLAY_NAME': 'TecPoint Soluções'
-}
-
-# Modifique a função de envio de email
 def send_email_with_retry(subject, text_content, html_content, recipient, is_internal=False, max_retries=3):
+    """Função de envio de email com suporte HTML melhorado"""
     try:
+        # Criar mensagem com partes alternativas
         msg = MIMEMultipart('alternative')
         msg['Subject'] = subject
-        msg['From'] = formataddr((EMAIL_CONFIG['DISPLAY_NAME'], EMAIL_CONFIG['SMTP_USERNAME']))
+        msg['From'] = SMTP_USERNAME
         msg['To'] = recipient
-        msg['Date'] = formatdate(localtime=True)
-        msg['Message-ID'] = email.utils.make_msgid(domain='tecpoint.net.br')
-        msg.add_header('Return-Path', EMAIL_CONFIG['SMTP_USERNAME'])
-        
-        # Adiciona as partes do email
-        msg.attach(MIMEText(text_content, 'plain', 'utf-8'))
-        msg.attach(MIMEText(html_content, 'html', 'utf-8'))
+        msg['Date'] = email.utils.formatdate(localtime=True)
 
-        with smtplib.SMTP_SSL(EMAIL_CONFIG['SMTP_SERVER'], EMAIL_CONFIG['SMTP_PORT']) as server:
-            server.ehlo()
-            server.login(EMAIL_CONFIG['SMTP_USERNAME'], EMAIL_CONFIG['SMTP_PASSWORD'])
-            server.send_message(msg)
-            return True
+        # Exibir nome amigável no FROM
+        msg['From'] = formataddr(("TecPoint Soluções", SMTP_USERNAME))
 
+        # Adiciona as versões texto e HTML
+        part1 = MIMEText(text_content, 'plain', 'utf-8')
+        part2 = MIMEText(html_content, 'html', 'utf-8')
+        msg.attach(part1)
+        msg.attach(part2)
+
+        # Tenta enviar
+        for attempt in range(max_retries):
+            try:
+                with smtplib.SMTP_SSL(SMTP_SERVER, SMTP_PORT) as server:
+                    server.ehlo()
+                    server.login(SMTP_USERNAME, SMTP_PASSWORD)
+                    server.sendmail(SMTP_USERNAME, [recipient], msg.as_string())
+                    print(f"Email enviado para {recipient}")
+                    return True
+            except Exception as e:
+                print(f"Tentativa {attempt + 1} falhou: {e}")
+                if attempt == max_retries - 1:
+                    return False
+                time.sleep(2)
+        return False
     except Exception as e:
         print(f"Erro ao enviar email: {e}")
         return False
