@@ -87,10 +87,19 @@ def load_metadata():
     return {}
 
 # Extensões permitidas
-ALLOWED_EXTENSIONS = {'pdf', 'png', 'jpg', 'jpeg', 'gif', 'doc', 'docx', 'txt'}
+# Extensões permitidas - definir apenas uma vez
+ALLOWED_EXTENSIONS = {
+    'png', 'jpg', 'jpeg', 'gif',  # imagens
+    'pdf', 'doc', 'docx', 'txt'   # documentos
+}
 
 def allowed_file(filename):
-    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+    """Verifica se a extensão do arquivo é permitida"""
+    if not filename:
+        return False
+    # Verifica extensão
+    ext = filename.rsplit('.', 1)[1].lower() if '.' in filename else ''
+    return ext in ALLOWED_EXTENSIONS
 
 # Configurações de Email
 SMTP_SERVER = 'smtps.uhserver.com'
@@ -100,7 +109,11 @@ SMTP_PASSWORD = 'tecpoint@2024B'
 
 # Inicialização
 db = SQLAlchemy(app)
-ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'pdf'}
+# Definir apenas uma vez no início do arquivo
+ALLOWED_EXTENSIONS = {
+    'png', 'jpg', 'jpeg', 'gif',  # imagens
+    'pdf', 'doc', 'docx', 'txt'   # documentos
+}
 
 # Modelos
 class Product(db.Model):
@@ -160,19 +173,29 @@ def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 def save_file(file):
-    """Salva o arquivo com nome único"""
+    """Salva arquivo com validações de segurança"""
     if not file or not file.filename:
         return None
-    if not allowed_file(file.filename):
-        return None
+        
     try:
+        # Validações básicas
+        if not allowed_file(file.filename):
+            return None
+            
+        # Gera nome único e seguro
         filename = secure_filename(file.filename)
         unique_filename = f"{uuid.uuid4()}_{filename}"
         file_path = os.path.join(app.config['UPLOAD_FOLDER'], unique_filename)
+        
+        # Salva arquivo
         file.save(file_path)
+        
+        # Ajusta permissões em ambiente de desenvolvimento
         if app.debug:
             os.chmod(file_path, 0o666)
+            
         return unique_filename
+        
     except Exception as e:
         print(f"Erro ao salvar arquivo: {e}")
         return None
@@ -212,7 +235,14 @@ def index():
 
 @app.route('/servicos')
 def servicos():
-    return render_template('servicos.html')
+    try:
+        # Busca serviços ordenados por data de criação
+        services = Service.query.order_by(Service.created_at.desc()).all()
+        return render_template('servicos.html', services=services)
+    except Exception as e:
+        print(f"Erro ao buscar serviços: {e}")
+        flash('Erro ao carregar serviços')
+        return redirect(url_for('index'))
 
 @app.route('/contato')
 def contato():
@@ -314,12 +344,59 @@ def save_failed_email(dados):
             f.write('\n')
     except Exception as e:
         print(f"Erro ao salvar email falho: {e}")
+class Service(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), nullable=False)
+    description = db.Column(db.Text, nullable=False)
+    features = db.Column(db.Text)  # Armazena JSON string de features
+    image_path = db.Column(db.String(200), nullable=False)
+    category = db.Column(db.String(50))
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
+    @property 
+    def features_list(self):
+        """Retorna features como lista Python"""
+        try:
+            return json.loads(self.features) if self.features else []
+        except json.JSONDecodeError:
+            return []
+def clean_filename(filename):
+    """Sanitize filename and ensure uniqueness"""
+    base = secure_filename(filename)
+    name, ext = os.path.splitext(base)
+    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+    return f"{name}_{timestamp}{ext}"
+
+def validate_image(file):
+    """Validação completa de imagem"""
+    if not file:
+        return False
+    try:
+        # Verifica extensão
+        if not allowed_file(file.filename):
+            return False
+            
+        # Verifica tamanho
+        file.seek(0, 2)  # Vai para o final do arquivo
+        size = file.tell()  # Pega o tamanho
+        file.seek(0)  # Volta para o início
+        
+        if size > app.config['MAX_CONTENT_LENGTH']:
+            return False
+            
+        # Aqui você poderia adicionar mais validações de imagem
+        # como verificar dimensões, formato real do arquivo, etc.
+        
+        return True
+    except Exception as e:
+        print(f"Erro ao validar imagem: {e}")
+        return False
 @app.route('/admin')
 @admin_required
 def admin_dashboard():
     products = Product.query.order_by(Product.created_at.desc()).all()
-    return render_template('admin/dashboard.html', products=products)
+    services = Service.query.order_by(Service.created_at.desc()).all()
+    return render_template('admin/dashboard.html', products=products, services=services)
 
 @app.route('/admin/login', methods=['GET', 'POST'])
 def admin_login():
@@ -344,7 +421,95 @@ def admin_logout():
     session.pop('admin_logged_in', None)
     flash('Logout realizado com sucesso!')
     return redirect(url_for('admin_login'))
+@app.route('/admin/produtos/<int:id>', methods=['GET'])
+@admin_required
+def get_product(id):
+    try:
+        product = Product.query.get_or_404(id)
+        return jsonify({
+            'name': product.name,
+            'description': product.description,
+            'category': product.category,
+            'specs': json.loads(product.specs) if product.specs else []
+        })
+    except Exception as e:
+        print(f"Erro ao buscar produto: {e}")
+        return jsonify({'error': 'Erro ao buscar produto'}), 500
 
+@app.route('/admin/produtos/editar/<int:id>', methods=['POST'])
+@admin_required
+def admin_edit_product(id):
+    product = Product.query.get_or_404(id)
+    try:
+        # Validate required fields
+        name = request.form.get('name', '').strip()
+        description = request.form.get('description', '').strip()
+        category = request.form.get('category', '').strip()
+        specs = request.form.getlist('specs[]')
+
+        if not all([name, description, category]):
+            flash('Preencha todos os campos obrigatórios')
+            return redirect(url_for('admin_dashboard'))
+
+        # Clean specs list
+        specs = [s.strip() for s in specs if s.strip()]
+
+        # Update product data
+        product.name = name
+        product.description = description
+        product.category = category
+        product.specs = json.dumps(specs) if specs else None
+
+        # Handle image update if provided
+        if 'image' in request.files:
+            file = request.files['image']
+            if file and allowed_file(file.filename):
+                # Delete old image
+                if product.image_path:
+                    delete_file(product.image_path)
+                # Save new image
+                new_image = save_file(file)
+                if new_image:
+                    product.image_path = new_image
+
+        # Handle PDF update if provided
+        if 'pdf' in request.files:
+            pdf_file = request.files['pdf']
+            if pdf_file and allowed_file(pdf_file.filename):
+                # Delete old PDF
+                if product.pdf_path:
+                    delete_file(product.pdf_path)
+                # Save new PDF
+                new_pdf = save_file(pdf_file)
+                if new_pdf:
+                    product.pdf_path = new_pdf
+
+        # Handle additional images
+        if 'images' in request.files:
+            additional_files = request.files.getlist('images')
+            new_images = []
+            old_images = json.loads(product.image_paths) if product.image_paths else []
+            
+            # Save new images
+            for file in additional_files:
+                if file and allowed_file(file.filename):
+                    img_name = save_file(file)
+                    if img_name:
+                        new_images.append(img_name)
+            
+            # Update image paths with both old and new images
+            if new_images:
+                product.image_paths = json.dumps(old_images + new_images)
+
+        db.session.commit()
+        flash('Produto atualizado com sucesso!')
+
+    except Exception as e:
+        db.session.rollback()
+        print(f"Erro ao atualizar produto: {e}")
+        flash('Erro ao atualizar produto')
+
+    return redirect(url_for('admin_dashboard'))
 @app.route('/admin/produtos/adicionar', methods=['GET', 'POST'])
 @admin_required
 def admin_add_product():
@@ -503,9 +668,35 @@ def enviar_contato_site():
         print(f'Erro: {e}')
         return jsonify({'error': 'Erro ao enviar mensagem'}), 500
 # -----------------------------------------------------------------------
+def add_features_column():
+    with app.app_context():
+        try:
+            db.engine.execute('ALTER TABLE service ADD COLUMN features TEXT')
+            print("Coluna 'features' adicionada com sucesso!")
+        except Exception as e:
+            print(f"Erro ao adicionar coluna: {e}")
+            # No app.py, adicione esta função:
+def recreate_tables():
+    with app.app_context():
+        # Remove as tabelas existentes
+        db.drop_all()
+        
+        # Recria todas as tabelas
+        db.create_all()
+        
+        # Recria o admin padrão
+        admin = Admin.query.filter_by(username='admin').first()
+        if not admin:
+            admin = Admin(
+                username='admin',
+                password_hash=generate_password_hash('admin123')
+            )
+            db.session.add(admin)
+            db.session.commit()
+            print("Admin recriado com sucesso!")
 
 # Logo após as definições de Product e Admin
-@app.before_first_request
+# -----------------------------------------------------------------------
 def init_database():
     with app.app_context():
         try:
@@ -569,9 +760,158 @@ def enviar_contato_form():
     except Exception as e:
         print(f'Erro detalhado: {e}')
         return jsonify({'error': 'Erro ao enviar mensagem'}), 500
-
+#SERVICOS
 # ------------------------------------------------------------------------
-# FIM NOVA ROTA
+@app.route('/admin/servicos/adicionar', methods=['GET', 'POST'])
+@admin_required
+def admin_add_service():
+    if request.method == 'POST':
+        try:
+            # Validate required fields
+            name = request.form.get('name', '').strip()
+            description = request.form.get('description', '').strip()
+            category = request.form.get('category', '').strip()
+            features = request.form.getlist('features[]')
+            image = request.files.get('image')
+
+            if not all([name, description, category]):
+                flash('Preencha todos os campos obrigatórios')
+                return redirect(url_for('admin_add_service'))
+
+            if not image or not allowed_file(image.filename):
+                flash('Por favor, envie uma imagem válida')
+                return redirect(url_for('admin_add_service'))
+
+            # Clean features list
+            features = [f.strip() for f in features if f.strip()]
+            if not features:
+                flash('Adicione pelo menos uma característica')
+                return redirect(url_for('admin_add_service'))
+
+            # Save image
+            image_filename = save_file(image)
+            if not image_filename:
+                flash('Erro ao salvar imagem')
+                return redirect(url_for('admin_add_service'))
+
+            # Create service
+            service = Service(
+                name=name,
+                description=description,
+                category=category,
+                features=json.dumps(features),
+                image_path=image_filename
+            )
+            db.session.add(service)
+            db.session.commit()
+            flash('Serviço adicionado com sucesso!')
+            return redirect(url_for('admin_dashboard'))
+
+        except Exception as e:
+            db.session.rollback()
+            print(f"Erro ao adicionar serviço: {e}")
+            flash('Erro ao adicionar serviço')
+            return redirect(url_for('admin_add_service'))
+
+    return render_template('admin/add_service.html')
+
+@app.route('/admin/servicos/<int:id>', methods=['GET'])
+@admin_required
+def get_service(id):
+    try:
+        service = Service.query.get_or_404(id)
+        return jsonify({
+            'name': service.name,
+            'description': service.description,
+            'category': service.category,
+            'features': service.features  # Retornar o JSON string original
+        })
+    except Exception as e:
+        print(f"Erro ao buscar serviço: {e}")
+        return jsonify({'error': 'Erro ao buscar serviço'}), 500        
+
+@app.route('/admin/servicos/editar/<int:id>', methods=['POST'])
+@admin_required
+def admin_edit_service(id):
+    service = Service.query.get_or_404(id)
+    try:
+        # Validação de campos
+        name = request.form.get('name', '').strip()
+        description = request.form.get('description', '').strip()
+        category = request.form.get('category', '').strip()
+        features = request.form.getlist('features[]')
+
+        if not all([name, description, category]):
+            flash('Preencha todos os campos obrigatórios')
+            return redirect(url_for('admin_dashboard'))
+
+        # Limpa e valida features
+        features = [f.strip() for f in features if f.strip()]
+        if not features:
+            flash('Adicione pelo menos uma característica')
+            return redirect(url_for('admin_dashboard'))
+
+        # Trata imagem se fornecida
+        if 'image' in request.files:
+            file = request.files['image']
+            if file and file.filename:
+                if not validate_image(file):
+                    flash('Imagem inválida ou muito grande')
+                    return redirect(url_for('admin_dashboard'))
+                
+                try:
+                    # Salva nova imagem
+                    new_image = save_file(file)
+                    if new_image:
+                        # Backup da imagem antiga
+                        old_image = service.image_path
+                        # Atualiza caminho
+                        service.image_path = new_image
+                        # Remove imagem antiga
+                        if old_image:
+                            delete_file(old_image)
+                    else:
+                        flash('Erro ao salvar nova imagem')
+                        return redirect(url_for('admin_dashboard'))
+                except Exception as e:
+                    print(f"Erro ao processar imagem: {e}")
+                    flash('Erro ao processar imagem')
+                    return redirect(url_for('admin_dashboard'))
+
+        # Atualiza dados do serviço
+        service.name = name
+        service.description = description
+        service.category = category
+        service.features = json.dumps(features)
+
+        db.session.commit()
+        flash('Serviço atualizado com sucesso!')
+
+    except Exception as e:
+        db.session.rollback()
+        print(f"Erro ao atualizar serviço: {e}")
+        flash('Erro ao atualizar serviço')
+
+    return redirect(url_for('admin_dashboard'))
+@app.route('/admin/servicos/excluir/<int:id>', methods=['POST'])
+@admin_required
+def admin_delete_service(id):
+    service = Service.query.get_or_404(id)
+    try:
+        # Delete associated image file
+        if service.image_path:
+            delete_file(service.image_path)
+        
+        db.session.delete(service)
+        db.session.commit()
+        flash('Serviço excluído com sucesso!')
+    except Exception as e:
+        db.session.rollback()
+        print(f"Erro ao excluir serviço: {e}")
+        flash('Erro ao excluir serviço')
+    
+    return redirect(url_for('admin_dashboard'))
+
 # ------------------------------------------------------------------------
 
 if __name__ == '__main__':

@@ -1,15 +1,13 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
-
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Serviços - TecPoint Soluções em Comunicação</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Serviços - TecPoint Serviços em Comunicação</title>
     <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='LogoTecPoint.png') }}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/solucoes.css') }}">
 </head>
-
 <body>
     <!-- Header -->
     <header class="header">
@@ -30,17 +28,46 @@
         </div>
     </header>
 
-    <!-- Hero Soluções -->
+    <!-- Hero Serviços -->
     <section class="solucoes-hero">
         <div class="solucoes-hero-content">
-            <h1>Nossas Serviços</h1>
+            <h1>Nossos Serviços</h1>
             <p>Tecnologia e inovação em radiocomunicação para sua empresa</p>
         </div>
     </section>
 
-    <!-- Grid de Soluções -->
+    <!-- Grid de Serviços -->
     <section class="solucoes-grid">
-        <!-- Solução DMR -->
+        {% if services %}
+            {% for service in services %}
+            <div class="solucao-card">
+                <div class="solucao-content">
+                    <div class="solucao-imagem">
+                        <img src="{{ url_for('uploaded_file', filename=service.image_path) }}" alt="{{ service.name }}">
+                    </div>
+                    <div class="solucao-texto">
+                        <h3>{{ service.name }}</h3>
+                        <p>{{ service.description }}</p>
+                        {% if service.features %}
+                        <ul class="solucao-features">
+                            {% for feature in service.features|json_loads %}
+                            <li><i class="fas fa-check"></i>{{ feature }}</li>
+                            {% endfor %}
+                        </ul>
+                        {% endif %}
+                        {% if service.category %}
+                        <a href="/produtos?category={{ service.category }}" 
+                           class="filtro-btn button button-primary {% if current_category == service.category %}active{% endif %}">
+                            {{ service.category }}
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+        <!-- Serviços Padrão -->
+        <!-- DMR -->
         <div class="solucao-card">
             <div class="solucao-content">
                 <div class="solucao-imagem">
@@ -60,7 +87,7 @@
             </div>
         </div>
 
-        <!-- Solução PoC -->
+        <!-- PoC -->
         <div class="solucao-card">
             <div class="solucao-content">
                 <div class="solucao-imagem">
@@ -80,7 +107,7 @@
             </div>
         </div>
 
-        <!-- Solução Tetra -->
+        <!-- Tetra -->
         <div class="solucao-card">
             <div class="solucao-content">
                 <div class="solucao-imagem">
@@ -100,7 +127,7 @@
             </div>
         </div>
 
-        <!-- Solução Bodycam -->
+        <!-- Bodycam -->
         <div class="solucao-card">
             <div class="solucao-content">
                 <div class="solucao-imagem">
@@ -119,6 +146,7 @@
                 </div>
             </div>
         </div>
+        {% endif %}
     </section>
 
     <!-- Footer -->
@@ -131,7 +159,7 @@
                 <div class="footer-wings-logo">
                     <img src="{{ url_for('static', filename='Logo-Parceiro-Wings.png') }}" alt="Wings Partner Logo" class="footer-partner-logo">
                 </div>
-                <p>Soluções em comunicação e tecnologia para sua empresa crescer.</p>
+                <p>Serviços em comunicação e tecnologia para sua empresa crescer.</p>
             </div>
             <div class="footer-section">
                 <h3>Links Rápidos</h3>
@@ -166,6 +194,5 @@
     </footer>
 
     <script src="{{ url_for('static', filename='js/solucoes.js') }}"></script>
-
 </body>
 </html>

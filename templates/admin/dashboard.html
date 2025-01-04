@@ -1,28 +1,23 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard - TecPoint Soluções em Comunicação</title>
+    <title>Painel Administrativo - TecPoint</title>
     <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='LogoTecPoint.png') }}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        /* Usando as mesmas variáveis do site principal */
         :root {
             --primary: #00A859;
             --secondary: #00C853;
             --accent: #00E676;
             --dark: #1C1C1C;
-            --darker: #0A0A0A;
             --light: #FFFFFF;
             --gray: #E8F5E9;
             --text-dark: #222222;
-            --text-light: #FFFFFF;
-            --text-gray: #666666;
             --gradient: linear-gradient(135deg, var(--primary), var(--accent));
-            --neon-glow: 0 0 20px rgba(0, 168, 89, 0.3);
             --shadow: 0 5px 20px rgba(0, 0, 0, 0.2);
-            --hover-bg: rgba(0, 168, 89, 0.1);
             --border-color: rgba(0, 168, 89, 0.1);
         }
 
@@ -36,10 +31,9 @@
             font-family: 'Segoe UI', sans-serif;
             line-height: 1.6;
             background: #f5f5f5;
-            color: var(--text-dark);
         }
 
-        /* Header Admin */
+        /* Header */
         .admin-header {
             background: white;
             border-bottom: 1px solid var(--border-color);
@@ -47,11 +41,11 @@
             width: 100%;
             top: 0;
             z-index: 1000;
-            padding: 1rem 2rem;
+            padding: 1rem;
         }
 
         .admin-header-content {
-            max-width: 1400px;
+            max-width: 1200px;
             margin: 0 auto;
             display: flex;
             justify-content: space-between;
@@ -65,10 +59,10 @@
         }
 
         .admin-logo img {
-            height: 60px;
+            height: 50px;
         }
 
-        .admin-nav {
+        .admin-header-content nav {
             display: flex;
             gap: 1rem;
             align-items: center;
@@ -76,41 +70,57 @@
 
         /* Main Content */
         .admin-main {
-            margin-top: 100px;
+            margin-top: 80px;
             padding: 2rem;
-            max-width: 1400px;
+            max-width: 1200px;
             margin-left: auto;
             margin-right: auto;
         }
 
-        .admin-title {
-            margin-bottom: 2rem;
+        /* Tabs */
+        .admin-tabs {
             display: flex;
-            justify-content: space-between;
-            align-items: center;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 0.5rem;
         }
 
-        /* Produtos Grid */
-        .produtos-grid {
+        .tab-button {
+            background: none;
+            border: none;
+            padding: 0.5rem 1rem;
+            font-size: 1rem;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            transition: 0.3s;
+        }
+
+        .tab-button.active {
+            color: var(--primary);
+            border-bottom-color: var(--primary);
+        }
+
+        /* Cards Grid */
+        .grid-container {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
             gap: 2rem;
-            margin-bottom: 2rem;
         }
 
-        .produto-card {
+        .card {
             background: white;
-            border-radius: 15px;
+            border-radius: 10px;
             overflow: hidden;
             box-shadow: var(--shadow);
-            transition: all 0.3s;
+            transition: transform 0.3s;
         }
 
-        .produto-card:hover {
+        .card:hover {
             transform: translateY(-5px);
         }
 
-        .produto-imagem {
+        .card-image {
             height: 200px;
             background: var(--gray);
             display: flex;
@@ -119,40 +129,34 @@
             padding: 1rem;
         }
 
-        .produto-imagem img {
+        .card-image img {
             max-width: 100%;
             max-height: 100%;
             object-fit: contain;
         }
 
-        .produto-info {
+        .card-info {
             padding: 1.5rem;
         }
 
-        .produto-info h3 {
-            color: var(--primary);
-            margin-bottom: 0.5rem;
-            font-size: 1.25rem;
-        }
-
-        .produto-acoes {
+        .card-actions {
             display: flex;
-            gap: 1rem;
+            gap: 0.5rem;
             margin-top: 1rem;
         }
 
-        /* Botões */
+        /* Buttons */
         .button {
             display: inline-flex;
             align-items: center;
             gap: 0.5rem;
-            padding: 0.8rem 1.5rem;
-            border-radius: 8px;
-            text-decoration: none;
-            font-weight: 500;
-            transition: all 0.3s;
+            padding: 0.5rem 1rem;
+            border-radius: 5px;
             border: none;
             cursor: pointer;
+            font-size: 0.9rem;
+            transition: 0.3s;
+            text-decoration: none;
         }
 
         .button-primary {
@@ -161,7 +165,7 @@
         }
 
         .button-outline {
-            border: 2px solid var(--primary);
+            border: 1px solid var(--primary);
             color: var(--primary);
             background: transparent;
         }
@@ -171,61 +175,102 @@
             color: white;
         }
 
-        .button:hover {
-            transform: translateY(-2px);
-            box-shadow: var(--shadow);
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
         }
 
-        /* Alertas */
-        .alert {
-            padding: 1rem;
-            border-radius: 8px;
+        .modal-content {
+            background: white;
+            width: 90%;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 2rem;
+            border-radius: 10px;
+            position: relative;
+        }
+
+        .modal-close {
+            position: absolute;
+            right: 1rem;
+            top: 1rem;
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+        }
+
+        .form-group {
             margin-bottom: 1rem;
         }
 
-        .alert-success {
-            background: #d4edda;
-            color: #155724;
-            border: 1px solid #c3e6cb;
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
         }
 
-        /* Responsividade */
+        .form-control {
+            width: 100%;
+            padding: 0.5rem;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+
+        /* Features List */
+        .features-list {
+            list-style: none;
+            margin: 1rem 0;
+        }
+
+        .features-list li {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .features-list i {
+            color: var(--primary);
+        }
+
+        /* Responsiveness */
         @media (max-width: 768px) {
-            .admin-header {
-                padding: 1rem;
-            }
-
-            .admin-main {
-                padding: 1rem;
-            }
-
-            .admin-nav {
-                flex-direction: column;
-            }
-
-            .produtos-grid {
+            .grid-container {
                 grid-template-columns: 1fr;
             }
 
-            .produto-acoes {
+            .card-actions {
                 flex-direction: column;
+            }
+
+            .button {
+                width: 100%;
+                justify-content: center;
             }
         }
     </style>
 </head>
+
 <body>
     <header class="admin-header">
         <div class="admin-header-content">
             <div class="admin-logo">
-                <img src="{{ url_for('static', filename='LogoTecPoint.png') }}" alt="TecPoint Logo">
+                <img src="{{ url_for('static', filename='LogoTecPoint.png') }}" alt="TecPoint">
                 <h1>Painel Administrativo</h1>
             </div>
-            <nav class="admin-nav">
+            <nav>
                 <a href="{{ url_for('produtos') }}" class="button button-outline" target="_blank">
-                    <i class="fas fa-eye"></i> Ver Site
+                    <i class="fas fa-shopping-cart"></i> Ver Produtos
                 </a>
-                <a href="{{ url_for('admin_add_product') }}" class="button button-primary">
-                    <i class="fas fa-plus"></i> Adicionar Produto
+                <a href="{{ url_for('servicos') }}" class="button button-outline" target="_blank">
+                    <i class="fas fa-cogs"></i> Ver Serviços
                 </a>
                 <a href="{{ url_for('admin_logout') }}" class="button button-outline">
                     <i class="fas fa-sign-out-alt"></i> Sair
@@ -235,46 +280,301 @@
     </header>
 
     <main class="admin-main">
-        {% with messages = get_flashed_messages() %}
-            {% if messages %}
-                {% for message in messages %}
-                    <div class="alert alert-success">{{ message }}</div>
-                {% endfor %}
-            {% endif %}
-        {% endwith %}
-
-        <div class="admin-title">
-            <h2>Gerenciar Produtos</h2>
+        <div class="admin-tabs">
+            <button class="tab-button active" onclick="showTab('produtos')">Produtos</button>
+            <button class="tab-button" onclick="showTab('servicos')">Serviços</button>
         </div>
 
-        <div class="produtos-grid">
-            {% for product in products %}
-            <div class="produto-card">
-                <div class="produto-imagem">
-                    <img src="{{ url_for('uploaded_file', filename=product.image_path) }}" alt="{{ product.name }}">
-                </div>
-                <div class="produto-info">
-                    <h3>{{ product.name }}</h3>
-                    <p>{{ product.description[:100] }}...</p>
-                    <p><strong>Categoria:</strong> {{ product.category }}</p>
-                    <div class="produto-acoes">
-                        <form method="POST" action="{{ url_for('admin_delete_product', id=product.id) }}"
-                              onsubmit="return confirm('Tem certeza que deseja excluir este produto?');">
-                            <button type="submit" class="button button-danger">
-                                <i class="fas fa-trash"></i> Excluir
+        <!-- Produtos -->
+        <div id="produtos-content" class="tab-content">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+                <h2>Gerenciar Produtos</h2>
+                <a href="{{ url_for('admin_add_product') }}" class="button button-primary">
+                    <i class="fas fa-plus"></i> Adicionar Produto
+                </a>
+            </div>
+
+            <div class="grid-container">
+                {% for product in products %}
+                <div class="card">
+                    <div class="card-image">
+                        <img src="{{ url_for('uploaded_file', filename=product.image_path) }}" alt="{{ product.name }}">
+                    </div>
+                    <div class="card-info">
+                        <h3>{{ product.name }}</h3>
+                        <p>{{ product.description[:100] }}...</p>
+                        <p><strong>Categoria:</strong> {{ product.category }}</p>
+                        <div class="card-actions">
+                            <button onclick="editarItem('produto', '{{ product.id }}')" class="button button-primary">
+                                <i class="fas fa-edit"></i> Editar
                             </button>
-                        </form>
-                        {% if product.pdf_path %}
-                            <a href="{{ url_for('uploaded_file', filename=product.pdf_path) }}" 
-                               class="button button-outline" target="_blank">
+                            <form method="POST" action="{{ url_for('admin_delete_product', id=product.id) }}"
+                                onsubmit="return confirm('Tem certeza que deseja excluir este produto?');">
+                                <button type="submit" class="button button-danger">
+                                    <i class="fas fa-trash"></i> Excluir
+                                </button>
+                            </form>
+                            {% if product.pdf_path %}
+                            <a href="{{ url_for('uploaded_file', filename=product.pdf_path) }}"
+                                class="button button-outline" target="_blank">
                                 <i class="fas fa-file-pdf"></i> Ver PDF
                             </a>
-                        {% endif %}
+                            {% endif %}
+                        </div>
                     </div>
                 </div>
+                {% endfor %}
             </div>
-            {% endfor %}
+        </div>
+
+        <!-- Serviços -->
+        <div id="servicos-content" class="tab-content" style="display: none;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+                <h2>Gerenciar Serviços</h2>
+                <a href="{{ url_for('admin_add_service') }}" class="button button-primary">
+                    <i class="fas fa-plus"></i> Adicionar Serviço
+                </a>
+            </div>
+
+            <div class="grid-container">
+                {% for service in services %}
+                <div class="card">
+                    <div class="card-image">
+                        <img src="{{ url_for('uploaded_file', filename=service.image_path) }}" alt="{{ service.name }}">
+                    </div>
+                    <div class="card-info">
+                        <h3>{{ service.name }}</h3>
+                        <p>{{ service.description[:100] }}...</p>
+                        <p><strong>Categoria:</strong> {{ service.category }}</p>
+                        {% if service.features %}
+                        <ul class="features-list">
+                            {% for feature in service.features|json_loads %}
+                            <li><i class="fas fa-check"></i> {{ feature }}</li>
+                            {% endfor %}
+                        </ul>
+                        {% endif %}
+                        <div class="card-actions">
+                            <button onclick="editarItem('servico', '{{ service.id }}')" class="button button-primary">                                <i class="fas fa-edit"></i> Editar
+                            </button>
+                            <form method="POST" action="{{ url_for('admin_delete_service', id=service.id) }}"
+                                onsubmit="return confirm('Tem certeza que deseja excluir este serviço?');">
+                                <button type="submit" class="button button-danger">
+                                    <i class="fas fa-trash"></i> Excluir
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Modal de Edição -->
+        <div class="modal" id="modalEdicao">
+            <div class="modal-content">
+                <button class="modal-close" onclick="fecharModal()">&times;</button>
+                <h3 id="modalTitulo">Editar Item</h3>
+                <form id="formEdicao" method="POST" enctype="multipart/form-data">
+                    <div class="form-group">
+                        <label for="nome">Nome</label>
+                        <input type="text" id="nome" name="name" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="descricao">Descrição</label>
+                        <textarea id="descricao" name="description" class="form-control" rows="4" required></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="categoria">Categoria</label>
+                        <select id="categoria" name="category" class="form-control" required>
+                            <option value="DMR">DMR</option>
+                            <option value="PoC">PoC</option>
+                            <option value="Tetra">Tetra</option>
+                            <option value="Bodycam">Bodycam</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="imagem">Nova Imagem (opcional)</label>
+                        <input type="file" id="imagem" name="image" class="form-control" accept="image/*">
+                    </div>
+                    <div class="form-group">
+                        <label for="images">Imagens Adicionais (opcional, para galeria)</label>
+                        <div class="file-input-container">
+                            <input type="file" id="images" name="images" accept=".jpg,.jpeg,.png" multiple>
+                            <small>Selecione várias imagens para criar a galeria (opcional)</small>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="pdf">Manual/Datasheet do Produto (PDF) (opcional)</label>
+                        <div class="file-input-container">
+                            <input type="file" id="pdf" name="pdf" accept=".pdf">
+                            <small>Formato aceito: PDF (máx. 50MB se ajustado no servidor).</small>
+                        </div>
+                    </div>
+                    <div id="features-container" style="display: none;">
+                        <div class="form-group">
+                            <label>Características</label>
+                            <div id="features-list"></div>
+                            <button type="button" onclick="adicionarFeature()" class="button button-outline">
+                                <i class="fas fa-plus"></i> Adicionar Característica
+                            </button>
+                        </div>
+                    </div>
+                    <div style="display: flex; justify-content: flex-end; gap: 1rem; margin-top: 2rem;">
+                        <button type="submit" class="button button-primary">Salvar</button>
+                        <button type="button" onclick="fecharModal()" class="button button-outline">Cancelar</button>
+                    </div>
+                    <div id="specs-container" style="display: none;">
+                        <div class="form-group">
+                            <label>Especificações</label>
+                            <div id="specs-list"></div>
+                            <button type="button" onclick="adicionarSpec()" class="button button-outline">
+                                <i class="fas fa-plus"></i> Adicionar Especificação
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
         </div>
     </main>
+
+    <script>
+        function showTab(tab) {
+            document.querySelectorAll('.tab-button').forEach(btn => {
+                btn.classList.remove('active');
+                if (btn.textContent.toLowerCase().includes(tab)) {
+                    btn.classList.add('active');
+                }
+            });
+
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.style.display = 'none';
+            });
+            document.getElementById(tab + '-content').style.display = 'block';
+        }
+
+        function editarItem(tipo, id) {
+            const modal = document.getElementById('modalEdicao');
+            const form = document.getElementById('formEdicao');
+            const isProduct = tipo === 'produto';
+
+            document.getElementById('modalTitulo').textContent =
+                `Editar ${isProduct ? 'Produto' : 'Serviço'}`;
+
+            // Controla visibilidade dos containers
+            document.getElementById('features-container').style.display = !isProduct ? 'block' : 'none';
+            document.getElementById('specs-container').style.display = isProduct ? 'block' : 'none';
+
+            // Busca dados do item
+            fetch(`/admin/${tipo}s/${id}`)
+                .then(response => response.json())
+                .then(data => {
+                    // Preenche campos básicos
+                    document.getElementById('nome').value = data.name || '';
+                    document.getElementById('descricao').value = data.description || '';
+                    document.getElementById('categoria').value = data.category || 'DMR';
+
+                    try {
+                        // Limpa listas existentes
+                        const featuresList = document.getElementById('features-list');
+                        const specsList = document.getElementById('specs-list');
+                        if (featuresList) featuresList.innerHTML = '';
+                        if (specsList) specsList.innerHTML = '';
+
+                        if (!isProduct && data.features) {
+                            // Processa features para serviços
+                            const features = typeof data.features === 'string' ?
+                                JSON.parse(data.features) : data.features;
+
+                            if (Array.isArray(features)) {
+                                features.forEach(feature => {
+                                    adicionarFeature(feature);
+                                });
+                            }
+                        } else if (isProduct && data.specs) {
+                            // Processa specs para produtos
+                            const specs = Array.isArray(data.specs) ?
+                                data.specs : JSON.parse(data.specs);
+
+                            specs.forEach(spec => {
+                                adicionarSpec(spec);
+                            });
+                        }
+
+                        // Configura ação do formulário
+                        form.action = `/admin/${tipo}s/editar/${id}`;
+                        modal.style.display = 'block';
+                    } catch (error) {
+                        console.error('Erro ao processar dados:', error);
+                        alert('Erro ao processar dados do item. Por favor, tente novamente.');
+                    }
+                })
+                .catch(error => {
+                    console.error('Erro ao carregar dados:', error);
+                    alert('Erro ao carregar dados. Por favor, tente novamente.');
+                });
+        }
+
+        // Função auxiliar para adicionar feature
+        function adicionarFeature(valor = '') {
+            const container = document.getElementById('features-list');
+            const div = document.createElement('div');
+            div.style.marginBottom = '10px';
+            div.style.display = 'flex';
+            div.style.gap = '10px';
+
+            div.innerHTML = `
+        <input type="text" name="features[]" value="${valor}" class="form-control" 
+               style="flex: 1" required placeholder="Digite uma característica">
+        <button type="button" class="button button-danger" onclick="this.parentElement.remove()">
+            <i class="fas fa-trash"></i>
+        </button>
+    `;
+
+            container.appendChild(div);
+        }
+
+        // Função auxiliar para adicionar spec
+        function adicionarSpec(valor = '') {
+            const container = document.getElementById('specs-list');
+            const div = document.createElement('div');
+            div.style.marginBottom = '10px';
+            div.style.display = 'flex';
+            div.style.gap = '10px';
+
+            div.innerHTML = `
+        <input type="text" name="specs[]" value="${valor}" class="form-control" 
+               style="flex: 1" required placeholder="Digite uma especificação">
+        <button type="button" class="button button-danger" onclick="this.parentElement.remove()">
+            <i class="fas fa-trash"></i>
+        </button>
+    `;
+
+            container.appendChild(div);
+        }
+
+        function fecharModal() {
+            const modal = document.getElementById('modalEdicao');
+            const form = document.getElementById('formEdicao');
+            const featuresList = document.getElementById('features-list');
+            const specsList = document.getElementById('specs-list');
+
+            modal.style.display = 'none';
+            form.reset();
+            if (featuresList) featuresList.innerHTML = '';
+            if (specsList) specsList.innerHTML = '';
+        }
+
+        window.onclick = function (event) {
+            const modal = document.getElementById('modalEdicao');
+            if (event.target === modal) {
+                fecharModal();
+            }
+        }
+
+        window.onload = function () {
+            showTab('produtos');
+        }
+    </script>
 </body>
+
 </html>
