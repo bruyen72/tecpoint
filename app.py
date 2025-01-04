@@ -696,7 +696,7 @@ def recreate_tables():
             print("Admin recriado com sucesso!")
 
 # Logo após as definições de Product e Admin
-# -----------------------------------------------------------------------
+@app.before_first_request
 def init_database():
     with app.app_context():
         try:
