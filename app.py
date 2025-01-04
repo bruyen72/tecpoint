@@ -20,6 +20,24 @@ import email
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.interval import IntervalTrigger
 
+# Configuração global do scheduler
+scheduler = BackgroundScheduler()
+
+# Verificar se o scheduler já está rodando antes de iniciar
+if not scheduler.running:
+    scheduler.start()
+
+# Exemplo de tarefa agendada
+def verificar_automatico():
+    print(f"Verificação automática iniciada: {datetime.now()}")
+
+# Adicionar a tarefa agendada
+scheduler.add_job(
+    verificar_automatico,
+    trigger=IntervalTrigger(seconds=30),  # Executar a cada 30 segundos
+    id="verificacao_automatica",
+    replace_existing=True  # Substituir caso já exista
+)
 
 # Inicialização do Flask
 app = Flask(
