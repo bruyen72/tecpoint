@@ -90,6 +90,12 @@ def load_metadata():
         print(f"Erro ao carregar metadados: {e}")
     return {}
 
+# Extensões permitidas
+# Extensões permitidas - definir apenas uma vez
+ALLOWED_EXTENSIONS = {
+    'png', 'jpg', 'jpeg', 'gif',  # imagens
+    'pdf', 'doc', 'docx', 'txt'   # documentos
+}
 
 def allowed_file(filename):
     """Verifica se a extensão do arquivo é permitida"""
