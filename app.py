@@ -15,29 +15,7 @@ from functools import wraps
 from email.utils import formataddr
 # Adicione esta linha para poder usar formatdate:
 from email.utils import formatdate
-import poplib
-import email
-from apscheduler.schedulers.background import BackgroundScheduler
-from apscheduler.triggers.interval import IntervalTrigger
 
-# Configuração global do scheduler
-scheduler = BackgroundScheduler()
-
-# Verificar se o scheduler já está rodando antes de iniciar
-if not scheduler.running:
-    scheduler.start()
-
-# Exemplo de tarefa agendada
-def verificar_automatico():
-    print(f"Verificação automática iniciada: {datetime.now()}")
-
-# Adicionar a tarefa agendada
-scheduler.add_job(
-    verificar_automatico,
-    trigger=IntervalTrigger(seconds=30),  # Executar a cada 30 segundos
-    id="verificacao_automatica",
-    replace_existing=True  # Substituir caso já exista
-)
 
 # Inicialização do Flask
 app = Flask(
@@ -136,83 +114,6 @@ ALLOWED_EXTENSIONS = {
     'png', 'jpg', 'jpeg', 'gif',  # imagens
     'pdf', 'doc', 'docx', 'txt'   # documentos
 }
-def verificar_emails():
-    try:
-        # Configurações seguras para o Railway
-        server = poplib.POP3_SSL('pop.uhserver.com', 995, timeout=60)
-        
-        # Login com retry
-        try:
-            server.user('contato@tecpoint.net.br')
-            server.pass_('tecpoint@2024B')
-        except Exception as e:
-            print(f"Erro de login: {e}")
-            return
-            
-        try:
-            # Verifica quantidade de emails
-            num_emails = len(server.list()[1])
-            
-            if num_emails > 0:
-                print(f"[{formatdate(localtime=True)}] {num_emails} novo(s) email(s)")
-                
-                # Processa cada email
-                for i in range(num_emails):
-                    try:
-                        # Obtém o email
-                        msg_data = server.retr(i+1)[1]
-                        msg = email.message_from_bytes(b'\n'.join(msg_data))
-                        
-                        # Extrai informações
-                        assunto = msg.get('subject', 'Sem assunto')
-                        remetente = msg.get('from', 'Desconhecido')
-                        
-                        print(f"Email {i+1}: De: {remetente} - Assunto: {assunto}")
-                        
-                    except Exception as e:
-                        print(f"Erro ao processar email {i+1}: {e}")
-                        continue
-                        
-            server.quit()
-            print("Verificação concluída com sucesso")
-            
-        except Exception as e:
-            print(f"Erro ao verificar emails: {e}")
-            server.quit()
-            
-    except Exception as e:
-        print(f"Erro na conexão: {e}")
-
-# Configuração do scheduler com retry
-def iniciar_scheduler():
-    try:
-        scheduler = BackgroundScheduler()
-        scheduler.add_job(
-            func=verificar_emails,
-            trigger=IntervalTrigger(minutes=2),
-            id='verificar_emails',
-            name='Verificação de Emails',
-            replace_existing=True,
-            max_instances=1
-        )
-        scheduler.start()
-        print("Verificação automática iniciada")
-        return scheduler
-    except Exception as e:
-        print(f"Erro ao iniciar scheduler: {e}")
-        return None
-
-# Inicia com o Flask
-@app.before_first_request
-def iniciar_verificacao():
-    global scheduler
-    scheduler = iniciar_scheduler()
-
-# Inicia verificação com o Flask
-@app.before_first_request
-def iniciar_verificacao():
-    scheduler.start()
-    print("Verificação automática iniciada")
 
 # Modelos
 class Product(db.Model):
