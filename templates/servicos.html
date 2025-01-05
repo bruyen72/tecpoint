@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,6 +9,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/solucoes.css') }}">
 </head>
+
 <body>
     <!-- Header -->
     <header class="header">
@@ -16,7 +18,8 @@
                 <a href="{{ url_for('index') }}" class="logo">
                     <img src="{{ url_for('static', filename='LogoTecPoint.png') }}" alt="TecPoint Logo">
                 </a>
-                <img src="{{ url_for('static', filename='Logo-Parceiro-Wings.png') }}" alt="Wings Partner Logo" class="partner-logo">
+                <img src="{{ url_for('static', filename='Logo-Parceiro-Wings.png') }}" alt="Wings Partner Logo"
+                    class="partner-logo">
             </div>
             <div class="mobile-toggle"><i class="fas fa-bars"></i></div>
             <nav class="nav-menu">
@@ -29,135 +32,140 @@
     </header>
 
     <!-- Hero Serviços -->
-    <section class="solucoes-hero">
-        <div class="solucoes-hero-content">
-            <h1>Nossos Serviços</h1>
-            <p>Tecnologia e inovação em radiocomunicação para sua empresa</p>
-        </div>
-    </section>
+    <!-- Hero Serviços -->
+<section class="solucoes-hero">
+    <div class="solucoes-hero-content">
+        <h1>Nossos Serviços</h1>
+        <p>Oferecemos serviços especializados em radiocomunicação para potencializar a comunicação da sua empresa</p>
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        {% for category, message in messages %}
+        <div class="alert alert-{{ category }}">{{ message }}</div>
+        {% endfor %}
+        {% endif %}
+        {% endwith %}
+    </div>
+</section>
 
-    <!-- Grid de Serviços -->
-    <section class="solucoes-grid">
-        {% if services %}
-            {% for service in services %}
-            <div class="solucao-card">
-                <div class="solucao-content">
-                    <div class="solucao-imagem">
-                        <img src="{{ url_for('uploaded_file', filename=service.image_path) }}" alt="{{ service.name }}">
-                    </div>
-                    <div class="solucao-texto">
-                        <h3>{{ service.name }}</h3>
-                        <p>{{ service.description }}</p>
-                        {% if service.features %}
-                        <ul class="solucao-features">
-                            {% for feature in service.features|json_loads %}
-                            <li><i class="fas fa-check"></i>{{ feature }}</li>
-                            {% endfor %}
-                        </ul>
-                        {% endif %}
-                        {% if service.category %}
-                        <a href="/produtos?category={{ service.category }}" 
-                           class="filtro-btn button button-primary {% if current_category == service.category %}active{% endif %}">
-                            {{ service.category }}
-                        </a>
-                        {% endif %}
-                    </div>
-                </div>
-            </div>
-            {% endfor %}
-        {% else %}
-        <!-- Serviços Padrão -->
-        <!-- DMR -->
-        <div class="solucao-card">
-            <div class="solucao-content">
-                <div class="solucao-imagem">
-                    <img src="{{ url_for('static', filename='DMR.png') }}" alt="Solução DMR">
-                </div>
-                <div class="solucao-texto">
-                    <h3>Soluções DMR</h3>
-                    <p>Sistema de radiocomunicação digital profissional que oferece maior qualidade de áudio, cobertura estendida e recursos avançados.</p>
-                    <ul class="solucao-features">
-                        <li><i class="fas fa-check"></i>Comunicação digital de alta qualidade</li>
-                        <li><i class="fas fa-check"></i>GPS integrado para localização</li>
-                        <li><i class="fas fa-check"></i>Mensagens de texto e dados</li>
-                        <li><i class="fas fa-check"></i>Chamadas individuais e em grupo</li>
-                    </ul>
-                    <a href="/produtos?category=DMR" class="filtro-btn button button-primary {% if current_category == 'DMR' %}active{% endif %}">DMR</a>
-                </div>
-            </div>
-        </div>
-
-        <!-- PoC -->
-        <div class="solucao-card">
-            <div class="solucao-content">
-                <div class="solucao-imagem">
-                    <img src="{{ url_for('static', filename='Poc.png') }}" alt="Solução PoC">
-                </div>
-                <div class="solucao-texto">
-                    <h3>Soluções PoC</h3>
-                    <p>Comunicação através de redes 3G/4G/5G, permitindo cobertura nacional e recursos avançados de dados.</p>
-                    <ul class="solucao-features">
-                        <li><i class="fas fa-check"></i>Cobertura nacional</li>
-                        <li><i class="fas fa-check"></i>Transmissão de vídeo</li>
-                        <li><i class="fas fa-check"></i>Integração com smartphones</li>
-                        <li><i class="fas fa-check"></i>Gerenciamento em tempo real</li>
-                    </ul>
-                    <a href="/produtos?category=PoC" class="filtro-btn button button-primary {% if current_category == 'PoC' %}active{% endif %}">PoC</a>
-                </div>
-            </div>
-        </div>
-
-        <!-- Tetra -->
-        <div class="solucao-card">
-            <div class="solucao-content">
-                <div class="solucao-imagem">
-                    <img src="{{ url_for('static', filename='Tetra.png') }}" alt="Solução Tetra">
-                </div>
-                <div class="solucao-texto">
-                    <h3>Soluções Tetra</h3>
-                    <p>Sistema profissional de comunicação crítica para operações que exigem máxima confiabilidade.</p>
-                    <ul class="solucao-features">
-                        <li><i class="fas fa-check"></i>Alta segurança e criptografia</li>
-                        <li><i class="fas fa-check"></i>Comunicação crítica</li>
-                        <li><i class="fas fa-check"></i>Redundância e confiabilidade</li>
-                        <li><i class="fas fa-check"></i>Integração com sistemas legados</li>
-                    </ul>
-                    <a href="/produtos?category=Tetra" class="filtro-btn button button-primary {% if current_category == 'Tetra' %}active{% endif %}">Tetra</a>
-                </div>
-            </div>
-        </div>
-
-        <!-- Bodycam -->
-        <div class="solucao-card">
-            <div class="solucao-content">
-                <div class="solucao-imagem">
-                    <img src="{{ url_for('static', filename='Bodaycam.png') }}" alt="Solução Bodycam">
-                </div>
-                <div class="solucao-texto">
-                    <h3>Soluções Bodycam</h3>
-                    <p>Câmeras corporais para segurança e documentação de operações em tempo real.</p>
-                    <ul class="solucao-features">
-                        <li><i class="fas fa-check"></i>Gravação em HD</li>
-                        <li><i class="fas fa-check"></i>Transmissão ao vivo</li>
-                        <li><i class="fas fa-check"></i>Armazenamento seguro</li>
-                        <li><i class="fas fa-check"></i>Integração com sistemas</li>
-                    </ul>
-                    <a href="/produtos?category=Bodycam" class="filtro-btn button button-primary {% if current_category == 'Bodycam' %}active{% endif %}">Bodycam</a>
-                </div>
-            </div>
+<!-- Grid de Serviços -->
+<section class="solucoes-grid">
+    {% for service in services %}
+    <div class="solucao-card" data-service-id="{{ service.id }}">
+        {% if current_user is defined and current_user.is_authenticated and current_user.is_admin %}
+        <div class="service-edit-btn">
+            <a href="{{ url_for('admin_edit_service', id=service.id) }}" class="btn-edit">
+                <i class="fas fa-edit"></i>
+            </a>
         </div>
         {% endif %}
-    </section>
+        <div class="solucao-content">
+            <div class="solucao-imagem">
+                {% if service.image_path %}
+                <img src="{{ url_for('uploaded_file', filename=service.image_path) }}" alt="{{ service.name }}"
+                    onerror="this.src='{{ url_for('static', filename='servicos/default.png') }}'">
+                {% else %}
+                <img src="{{ url_for('static', filename='servicos/default.png') }}" alt="{{ service.name }}">
+                {% endif %}
+            </div>
+            <div class="solucao-texto">
+                <h3>{{ service.name }}</h3>
+                <p>{{ service.description }}</p>
+                {% if service.features %}
+                <ul class="solucao-features">
+                    {% for feature in service.features|json_loads %}
+                    <li><i class="fas fa-check-circle"></i> {{ feature }}</li>
+                    {% endfor %}
+                </ul>
+                {% endif %}
+                {% if service.category %}
+                <div class="service-category">
+                    <span>
+                        {% if service.category == 'locacao' %}Locação de Equipamentos
+                        {% elif service.category == 'manutencao' %}Manutenção de Equipamentos
+                        {% elif service.category == 'projetos' %}Projetos Técnicos
+                        {% elif service.category == 'legalizacao' %}Legalização ANATEL
+                        {% elif service.category == 'implantacao' %}Implantação de Sistemas
+                        {% else %}{{ service.category }}
+                        {% endif %}
+                    </span>
+                </div>
+                {% endif %}
+                <!-- Botão dinâmico -->
+                <button onclick="abrirModalContato('{{ service.category }}')" class="button button-primary">
+                    <i class="fas fa-info-circle"></i> {{ service.buttonText or 'Saiba Mais' }}
+                </button>
 
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</section>
+    <!-- Modal de Contato -->
+    <div id="modalContato" class="modal" style="display:none;">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <!-- Cabeçalho do Modal -->
+                <div class="modal-header">
+                    <h5 class="modal-title">Entre em Contato</h5>
+                    <button type="button" class="btn-close" onclick="fecharModalContato()">&times;</button>
+                </div>
+
+                <!-- Corpo do Modal -->
+                <div class="modal-body">
+                    <form id="formularioContato" method="POST">
+                        <!-- Campo Oculto para Categoria -->
+                        <input type="hidden" id="servicoCategoria" name="categoria">
+
+                        <!-- Campo Nome Completo -->
+                        <div class="form-group">
+                            <label for="nomeContato">Nome Completo *</label>
+                            <input type="text" class="form-control" id="nomeContato" name="nome"
+                                placeholder="Digite seu nome completo" required>
+                        </div>
+
+                        <!-- Campo E-mail -->
+                        <div class="form-group">
+                            <label for="emailContato">E-mail *</label>
+                            <input type="email" class="form-control" id="emailContato" name="email"
+                                placeholder="Digite seu e-mail" required>
+                        </div>
+
+                        <!-- Campo Telefone -->
+                        <div class="form-group">
+                            <label for="telefoneContato">Telefone</label>
+                            <input type="tel" class="form-control" id="telefoneContato" name="telefone"
+                                placeholder="(XX) XXXXX-XXXX">
+                        </div>
+
+                        <!-- Campo Mensagem -->
+                        <div class="form-group">
+                            <label for="mensagemContato">Mensagem *</label>
+                            <textarea class="form-control" id="mensagemContato" name="mensagem" rows="4"
+                                placeholder="Digite sua mensagem" required></textarea>
+                        </div>
+
+                        <!-- Botão de Envio -->
+                        <div class="form-group text-end">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-paper-plane"></i> Enviar Mensagem
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
     <!-- Footer -->
     <footer class="footer">
         <div class="footer-content">
             <div class="footer-section">
                 <div class="footer-tecpoint-logo">
-                    <img src="{{ url_for('static', filename='LogoTecPoint.png') }}" alt="TecPoint Logo" class="footer-logo">
+                    <img src="{{ url_for('static', filename='LogoTecPoint.png') }}" alt="TecPoint Logo"
+                        class="footer-logo">
                 </div>
                 <div class="footer-wings-logo">
-                    <img src="{{ url_for('static', filename='Logo-Parceiro-Wings.png') }}" alt="Wings Partner Logo" class="footer-partner-logo">
+                    <img src="{{ url_for('static', filename='Logo-Parceiro-Wings.png') }}" alt="Wings Partner Logo"
+                        class="footer-partner-logo">
                 </div>
                 <p>Serviços em comunicação e tecnologia para sua empresa crescer.</p>
             </div>
@@ -184,7 +192,7 @@
                     </a>
                     <a href="https://wa.me/5565999772110" target="_blank" rel="noopener" title="WhatsApp">
                         <i class="fab fa-whatsapp"></i>
-                    </a>                    
+                    </a>
                 </div>
             </div>
         </div>
@@ -192,7 +200,7 @@
             <p>&copy; 2024 TecPoint. Todos os direitos reservados.</p>
         </div>
     </footer>
-
     <script src="{{ url_for('static', filename='js/solucoes.js') }}"></script>
 </body>
+
 </html>

@@ -7,255 +7,7 @@
     <title>Painel Administrativo - TecPoint</title>
     <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='LogoTecPoint.png') }}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <style>
-        :root {
-            --primary: #00A859;
-            --secondary: #00C853;
-            --accent: #00E676;
-            --dark: #1C1C1C;
-            --light: #FFFFFF;
-            --gray: #E8F5E9;
-            --text-dark: #222222;
-            --gradient: linear-gradient(135deg, var(--primary), var(--accent));
-            --shadow: 0 5px 20px rgba(0, 0, 0, 0.2);
-            --border-color: rgba(0, 168, 89, 0.1);
-        }
-
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: 'Segoe UI', sans-serif;
-            line-height: 1.6;
-            background: #f5f5f5;
-        }
-
-        /* Header */
-        .admin-header {
-            background: white;
-            border-bottom: 1px solid var(--border-color);
-            position: fixed;
-            width: 100%;
-            top: 0;
-            z-index: 1000;
-            padding: 1rem;
-        }
-
-        .admin-header-content {
-            max-width: 1200px;
-            margin: 0 auto;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .admin-logo {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-        }
-
-        .admin-logo img {
-            height: 50px;
-        }
-
-        .admin-header-content nav {
-            display: flex;
-            gap: 1rem;
-            align-items: center;
-        }
-
-        /* Main Content */
-        .admin-main {
-            margin-top: 80px;
-            padding: 2rem;
-            max-width: 1200px;
-            margin-left: auto;
-            margin-right: auto;
-        }
-
-        /* Tabs */
-        .admin-tabs {
-            display: flex;
-            gap: 1rem;
-            margin-bottom: 2rem;
-            border-bottom: 1px solid var(--border-color);
-            padding-bottom: 0.5rem;
-        }
-
-        .tab-button {
-            background: none;
-            border: none;
-            padding: 0.5rem 1rem;
-            font-size: 1rem;
-            cursor: pointer;
-            border-bottom: 2px solid transparent;
-            transition: 0.3s;
-        }
-
-        .tab-button.active {
-            color: var(--primary);
-            border-bottom-color: var(--primary);
-        }
-
-        /* Cards Grid */
-        .grid-container {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-            gap: 2rem;
-        }
-
-        .card {
-            background: white;
-            border-radius: 10px;
-            overflow: hidden;
-            box-shadow: var(--shadow);
-            transition: transform 0.3s;
-        }
-
-        .card:hover {
-            transform: translateY(-5px);
-        }
-
-        .card-image {
-            height: 200px;
-            background: var(--gray);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 1rem;
-        }
-
-        .card-image img {
-            max-width: 100%;
-            max-height: 100%;
-            object-fit: contain;
-        }
-
-        .card-info {
-            padding: 1.5rem;
-        }
-
-        .card-actions {
-            display: flex;
-            gap: 0.5rem;
-            margin-top: 1rem;
-        }
-
-        /* Buttons */
-        .button {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.5rem;
-            padding: 0.5rem 1rem;
-            border-radius: 5px;
-            border: none;
-            cursor: pointer;
-            font-size: 0.9rem;
-            transition: 0.3s;
-            text-decoration: none;
-        }
-
-        .button-primary {
-            background: var(--gradient);
-            color: white;
-        }
-
-        .button-outline {
-            border: 1px solid var(--primary);
-            color: var(--primary);
-            background: transparent;
-        }
-
-        .button-danger {
-            background: #dc3545;
-            color: white;
-        }
-
-        /* Modal */
-        .modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.5);
-            z-index: 1000;
-        }
-
-        .modal-content {
-            background: white;
-            width: 90%;
-            max-width: 600px;
-            margin: 50px auto;
-            padding: 2rem;
-            border-radius: 10px;
-            position: relative;
-        }
-
-        .modal-close {
-            position: absolute;
-            right: 1rem;
-            top: 1rem;
-            background: none;
-            border: none;
-            font-size: 1.5rem;
-            cursor: pointer;
-        }
-
-        .form-group {
-            margin-bottom: 1rem;
-        }
-
-        .form-group label {
-            display: block;
-            margin-bottom: 0.5rem;
-        }
-
-        .form-control {
-            width: 100%;
-            padding: 0.5rem;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-        }
-
-        /* Features List */
-        .features-list {
-            list-style: none;
-            margin: 1rem 0;
-        }
-
-        .features-list li {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            margin-bottom: 0.5rem;
-        }
-
-        .features-list i {
-            color: var(--primary);
-        }
-
-        /* Responsiveness */
-        @media (max-width: 768px) {
-            .grid-container {
-                grid-template-columns: 1fr;
-            }
-
-            .card-actions {
-                flex-direction: column;
-            }
-
-            .button {
-                width: 100%;
-                justify-content: center;
-            }
-        }
-    </style>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
 </head>
 
 <body>
@@ -354,7 +106,8 @@
                         </ul>
                         {% endif %}
                         <div class="card-actions">
-                            <button onclick="editarItem('servico', '{{ service.id }}')" class="button button-primary">                                <i class="fas fa-edit"></i> Editar
+                            <button onclick="editarItem('servico', '{{ service.id }}')" class="button button-primary">
+                                <i class="fas fa-edit"></i> Editar
                             </button>
                             <form method="POST" action="{{ url_for('admin_delete_service', id=service.id) }}"
                                 onsubmit="return confirm('Tem certeza que deseja excluir este serviço?');">
@@ -370,22 +123,24 @@
         </div>
 
         <!-- Modal de Edição -->
-        <div class="modal" id="modalEdicao">
+        <!-- Modal de Edição de Produto -->
+        <div class="modal" id="modalEdicaoProduto">
             <div class="modal-content">
-                <button class="modal-close" onclick="fecharModal()">&times;</button>
-                <h3 id="modalTitulo">Editar Item</h3>
-                <form id="formEdicao" method="POST" enctype="multipart/form-data">
+                <button class="modal-close" onclick="fecharModalProduto()">&times;</button>
+                <h3>Editar Produto</h3>
+                <form id="formEdicaoProduto" method="POST" enctype="multipart/form-data">
                     <div class="form-group">
-                        <label for="nome">Nome</label>
-                        <input type="text" id="nome" name="name" class="form-control" required>
+                        <label for="nomeProduto">Nome</label>
+                        <input type="text" id="nomeProduto" name="name" class="form-control" required>
                     </div>
                     <div class="form-group">
-                        <label for="descricao">Descrição</label>
-                        <textarea id="descricao" name="description" class="form-control" rows="4" required></textarea>
+                        <label for="descricaoProduto">Descrição</label>
+                        <textarea id="descricaoProduto" name="description" class="form-control" rows="4"
+                            required></textarea>
                     </div>
                     <div class="form-group">
-                        <label for="categoria">Categoria</label>
-                        <select id="categoria" name="category" class="form-control" required>
+                        <label for="categoriaProduto">Categoria</label>
+                        <select id="categoriaProduto" name="category" class="form-control" required>
                             <option value="DMR">DMR</option>
                             <option value="PoC">PoC</option>
                             <option value="Tetra">Tetra</option>
@@ -393,188 +148,97 @@
                         </select>
                     </div>
                     <div class="form-group">
-                        <label for="imagem">Nova Imagem (opcional)</label>
-                        <input type="file" id="imagem" name="image" class="form-control" accept="image/*">
+                        <label for="imagemProduto">Nova Imagem (opcional)</label>
+                        <input type="file" id="imagemProduto" name="image" class="form-control" accept="image/*">
                     </div>
                     <div class="form-group">
-                        <label for="images">Imagens Adicionais (opcional, para galeria)</label>
+                        <label for="imagesProduto">Imagens Adicionais (opcional, para galeria)</label>
                         <div class="file-input-container">
-                            <input type="file" id="images" name="images" accept=".jpg,.jpeg,.png" multiple>
+                            <input type="file" id="imagesProduto" name="images" accept=".jpg,.jpeg,.png" multiple>
                             <small>Selecione várias imagens para criar a galeria (opcional)</small>
                         </div>
                     </div>
                     <div class="form-group">
-                        <label for="pdf">Manual/Datasheet do Produto (PDF) (opcional)</label>
+                        <label for="pdfProduto">Manual/Datasheet do Produto (PDF) (opcional)</label>
                         <div class="file-input-container">
-                            <input type="file" id="pdf" name="pdf" accept=".pdf">
+                            <input type="file" id="pdfProduto" name="pdf" accept=".pdf">
                             <small>Formato aceito: PDF (máx. 50MB se ajustado no servidor).</small>
                         </div>
                     </div>
-                    <div id="features-container" style="display: none;">
-                        <div class="form-group">
-                            <label>Características</label>
-                            <div id="features-list"></div>
-                            <button type="button" onclick="adicionarFeature()" class="button button-outline">
-                                <i class="fas fa-plus"></i> Adicionar Característica
-                            </button>
-                        </div>
+                    <div class="form-group">
+                        <label>Especificações</label>
+                        <div id="specs-list"></div>
+                        <button type="button" onclick="adicionarSpec()" class="button button-outline">
+                            <i class="fas fa-plus"></i> Adicionar Especificação
+                        </button>
                     </div>
-                    <div style="display: flex; justify-content: flex-end; gap: 1rem; margin-top: 2rem;">
+                    <div class="modal-actions">
                         <button type="submit" class="button button-primary">Salvar</button>
-                        <button type="button" onclick="fecharModal()" class="button button-outline">Cancelar</button>
+                        <button type="button" onclick="fecharModalProduto()"
+                            class="button button-outline">Cancelar</button>
                     </div>
-                    <div id="specs-container" style="display: none;">
-                        <div class="form-group">
-                            <label>Especificações</label>
-                            <div id="specs-list"></div>
-                            <button type="button" onclick="adicionarSpec()" class="button button-outline">
-                                <i class="fas fa-plus"></i> Adicionar Especificação
-                            </button>
-                        </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Modal de Edição de Serviço -->
+        <div class="modal" id="modalEdicaoServico">
+            <div class="modal-content">
+                <button class="modal-close" onclick="fecharModalServico()">&times;</button>
+                <h3>Editar Serviço</h3>
+                <form id="formEdicaoServico" method="POST" enctype="multipart/form-data">
+                    <!-- Nome do Serviço -->
+                    <div class="form-group">
+                        <label for="nomeServico">Nome</label>
+                        <input type="text" id="nomeServico" name="name" class="form-control" required>
+                    </div>
+
+                    <!-- Descrição do Serviço -->
+                    <div class="form-group">
+                        <label for="descricaoServico">Descrição</label>
+                        <textarea id="descricaoServico" name="description" class="form-control" rows="4"
+                            required></textarea>
+                    </div>
+
+                    <!-- Categoria do Serviço -->
+                    <div class="form-group">
+                        <label for="categoriaServico">Categoria de Serviço</label>
+                        <select id="categoriaServico" name="category" class="form-control" required>
+                            <option value="locacao">Locação de Equipamentos</option>
+                            <option value="manutencao">Manutenção de Equipamentos</option>
+                            <option value="projetos">Projetos Técnicos</option>
+                            <option value="legalizacao">Legalização junto à ANATEL</option>
+                            <option value="implantacao">Implantação de Sistemas</option>
+                        </select>
+                    </div>
+
+                    <!-- Imagem do Serviço -->
+                    <div class="form-group">
+                        <label for="imagemServico">Imagem do Serviço (opcional)</label>
+                        <input type="file" id="imagemServico" name="image" class="form-control" accept="image/*">
+                    </div>
+
+                    <!-- Características do Serviço -->
+                    <div class="form-group">
+                        <label>Características do Serviço</label>
+                        <div id="features-list"></div>
+                        <button type="button" onclick="adicionarFeature()" class="button button-outline">
+                            <i class="fas fa-plus"></i> Adicionar Característica
+                        </button>
+                    </div>
+                    <!-- Ações do Modal -->
+                    <div class="modal-actions">
+                        <button type="submit" class="button button-primary">Salvar</button>
+                        <button type="button" onclick="fecharModalServico()"
+                            class="button button-outline">Cancelar</button>
                     </div>
                 </form>
             </div>
         </div>
     </main>
 
-    <script>
-        function showTab(tab) {
-            document.querySelectorAll('.tab-button').forEach(btn => {
-                btn.classList.remove('active');
-                if (btn.textContent.toLowerCase().includes(tab)) {
-                    btn.classList.add('active');
-                }
-            });
+    <script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
 
-            document.querySelectorAll('.tab-content').forEach(content => {
-                content.style.display = 'none';
-            });
-            document.getElementById(tab + '-content').style.display = 'block';
-        }
-
-        function editarItem(tipo, id) {
-            const modal = document.getElementById('modalEdicao');
-            const form = document.getElementById('formEdicao');
-            const isProduct = tipo === 'produto';
-
-            document.getElementById('modalTitulo').textContent =
-                `Editar ${isProduct ? 'Produto' : 'Serviço'}`;
-
-            // Controla visibilidade dos containers
-            document.getElementById('features-container').style.display = !isProduct ? 'block' : 'none';
-            document.getElementById('specs-container').style.display = isProduct ? 'block' : 'none';
-
-            // Busca dados do item
-            fetch(`/admin/${tipo}s/${id}`)
-                .then(response => response.json())
-                .then(data => {
-                    // Preenche campos básicos
-                    document.getElementById('nome').value = data.name || '';
-                    document.getElementById('descricao').value = data.description || '';
-                    document.getElementById('categoria').value = data.category || 'DMR';
-
-                    try {
-                        // Limpa listas existentes
-                        const featuresList = document.getElementById('features-list');
-                        const specsList = document.getElementById('specs-list');
-                        if (featuresList) featuresList.innerHTML = '';
-                        if (specsList) specsList.innerHTML = '';
-
-                        if (!isProduct && data.features) {
-                            // Processa features para serviços
-                            const features = typeof data.features === 'string' ?
-                                JSON.parse(data.features) : data.features;
-
-                            if (Array.isArray(features)) {
-                                features.forEach(feature => {
-                                    adicionarFeature(feature);
-                                });
-                            }
-                        } else if (isProduct && data.specs) {
-                            // Processa specs para produtos
-                            const specs = Array.isArray(data.specs) ?
-                                data.specs : JSON.parse(data.specs);
-
-                            specs.forEach(spec => {
-                                adicionarSpec(spec);
-                            });
-                        }
-
-                        // Configura ação do formulário
-                        form.action = `/admin/${tipo}s/editar/${id}`;
-                        modal.style.display = 'block';
-                    } catch (error) {
-                        console.error('Erro ao processar dados:', error);
-                        alert('Erro ao processar dados do item. Por favor, tente novamente.');
-                    }
-                })
-                .catch(error => {
-                    console.error('Erro ao carregar dados:', error);
-                    alert('Erro ao carregar dados. Por favor, tente novamente.');
-                });
-        }
-
-        // Função auxiliar para adicionar feature
-        function adicionarFeature(valor = '') {
-            const container = document.getElementById('features-list');
-            const div = document.createElement('div');
-            div.style.marginBottom = '10px';
-            div.style.display = 'flex';
-            div.style.gap = '10px';
-
-            div.innerHTML = `
-        <input type="text" name="features[]" value="${valor}" class="form-control" 
-               style="flex: 1" required placeholder="Digite uma característica">
-        <button type="button" class="button button-danger" onclick="this.parentElement.remove()">
-            <i class="fas fa-trash"></i>
-        </button>
-    `;
-
-            container.appendChild(div);
-        }
-
-        // Função auxiliar para adicionar spec
-        function adicionarSpec(valor = '') {
-            const container = document.getElementById('specs-list');
-            const div = document.createElement('div');
-            div.style.marginBottom = '10px';
-            div.style.display = 'flex';
-            div.style.gap = '10px';
-
-            div.innerHTML = `
-        <input type="text" name="specs[]" value="${valor}" class="form-control" 
-               style="flex: 1" required placeholder="Digite uma especificação">
-        <button type="button" class="button button-danger" onclick="this.parentElement.remove()">
-            <i class="fas fa-trash"></i>
-        </button>
-    `;
-
-            container.appendChild(div);
-        }
-
-        function fecharModal() {
-            const modal = document.getElementById('modalEdicao');
-            const form = document.getElementById('formEdicao');
-            const featuresList = document.getElementById('features-list');
-            const specsList = document.getElementById('specs-list');
-
-            modal.style.display = 'none';
-            form.reset();
-            if (featuresList) featuresList.innerHTML = '';
-            if (specsList) specsList.innerHTML = '';
-        }
-
-        window.onclick = function (event) {
-            const modal = document.getElementById('modalEdicao');
-            if (event.target === modal) {
-                fecharModal();
-            }
-        }
-
-        window.onload = function () {
-            showTab('produtos');
-        }
-    </script>
 </body>
 
 </html>

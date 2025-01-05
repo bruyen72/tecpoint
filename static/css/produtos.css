@@ -115,14 +115,32 @@ body {
     text-decoration: none;
     padding: 0.5rem 1rem;
     border-radius: 8px;
-    transition: 0.3s;
+    transition: all 0.3s;
+    position: relative;
     font-weight: 500;
+}
+
+.nav-link::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 1rem;
+    right: 1rem;
+    height: 2px;
+    background: var(--accent);
+    transform: scaleX(0);
+    transition: transform 0.3s;
 }
 
 .nav-link:hover {
     color: var(--accent);
     background: var(--hover-bg);
 }
+
+.nav-link:hover::after {
+    transform: scaleX(1);
+}
+
 
 .mobile-toggle {
     display: none;

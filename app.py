@@ -133,31 +133,26 @@ class Admin(db.Model):
     password_hash = db.Column(db.String(120), nullable=False)
 
 # Função de envio de email otimizada
-def send_email(subject, html_content, to_email, reply_to=None):
-    try:
-        msg = MIMEMultipart('alternative')
-        msg['Subject'] = subject
-        msg['From'] = formataddr(("TecPoint", SMTP_USERNAME))
-        msg['To'] = to_email
+def send_email(subject, html_content, to_email, reply_to=None): 
+    try: 
+        msg = MIMEMultipart('alternative') 
+        msg['Subject'] = subject 
+        msg['From'] = formataddr(("TecPoint", SMTP_USERNAME)) 
+        msg['To'] = to_email 
         msg['Date'] = formatdate(localtime=True)
-        
-        if reply_to:
+        if reply_to: 
             msg.add_header('Reply-To', reply_to)
-
-        # Gera versão texto do HTML
+        # Gera versão texto do HTML 
         text_content = html_content.replace('<br>', '\n').replace('</p>', '\n')
-        
-        msg.attach(MIMEText(text_content, 'plain', 'utf-8'))
+        msg.attach(MIMEText(text_content, 'plain', 'utf-8')) 
         msg.attach(MIMEText(html_content, 'html', 'utf-8'))
-
-        with smtplib.SMTP_SSL(SMTP_SERVER, SMTP_PORT, timeout=30) as server:
-            server.ehlo()
-            server.login(SMTP_USERNAME, SMTP_PASSWORD)
-            server.send_message(msg)
-            return True
-            
-    except Exception as e:
-        print(f"Erro ao enviar email: {e}")
+        with smtplib.SMTP_SSL(SMTP_SERVER, SMTP_PORT, timeout=30) as server: 
+            server.ehlo() 
+            server.login(SMTP_USERNAME, SMTP_PASSWORD) 
+            server.send_message(msg) 
+        return True
+    except Exception as e: 
+        print(f"Erro ao enviar email: {e}") 
         return False
 
 # Funções auxiliares
@@ -441,75 +436,70 @@ def get_product(id):
 def admin_edit_product(id):
     product = Product.query.get_or_404(id)
     try:
-        # Validate required fields
+        # Validação de campos obrigatórios
         name = request.form.get('name', '').strip()
         description = request.form.get('description', '').strip()
         category = request.form.get('category', '').strip()
         specs = request.form.getlist('specs[]')
 
         if not all([name, description, category]):
-            flash('Preencha todos os campos obrigatórios')
-            return redirect(url_for('admin_dashboard'))
+            flash('Preencha todos os campos obrigatórios', 'error')
+            return redirect(url_for('admin_dashboard', tab='produtos'))
 
-        # Clean specs list
+        # Limpa a lista de especificações
         specs = [s.strip() for s in specs if s.strip()]
 
-        # Update product data
+        # Atualiza os dados do produto
         product.name = name
         product.description = description
         product.category = category
         product.specs = json.dumps(specs) if specs else None
 
-        # Handle image update if provided
+        # Atualiza a imagem, se fornecida
         if 'image' in request.files:
             file = request.files['image']
             if file and allowed_file(file.filename):
-                # Delete old image
                 if product.image_path:
-                    delete_file(product.image_path)
-                # Save new image
+                    delete_file(product.image_path)  # Deleta a imagem antiga
                 new_image = save_file(file)
                 if new_image:
                     product.image_path = new_image
 
-        # Handle PDF update if provided
+        # Atualiza o PDF, se fornecido
         if 'pdf' in request.files:
             pdf_file = request.files['pdf']
             if pdf_file and allowed_file(pdf_file.filename):
-                # Delete old PDF
                 if product.pdf_path:
-                    delete_file(product.pdf_path)
-                # Save new PDF
+                    delete_file(product.pdf_path)  # Deleta o PDF antigo
                 new_pdf = save_file(pdf_file)
                 if new_pdf:
                     product.pdf_path = new_pdf
 
-        # Handle additional images
+        # Imagens adicionais
         if 'images' in request.files:
             additional_files = request.files.getlist('images')
             new_images = []
             old_images = json.loads(product.image_paths) if product.image_paths else []
-            
-            # Save new images
+
             for file in additional_files:
                 if file and allowed_file(file.filename):
                     img_name = save_file(file)
                     if img_name:
                         new_images.append(img_name)
-            
-            # Update image paths with both old and new images
+
             if new_images:
                 product.image_paths = json.dumps(old_images + new_images)
 
         db.session.commit()
-        flash('Produto atualizado com sucesso!')
+        flash('Produto atualizado com sucesso!', 'success')
+        return redirect(url_for('admin_dashboard', tab='produtos'))
 
     except Exception as e:
         db.session.rollback()
         print(f"Erro ao atualizar produto: {e}")
-        flash('Erro ao atualizar produto')
+        flash('Erro ao atualizar produto. Por favor, tente novamente.', 'error')
+        return redirect(url_for('admin_dashboard', tab='produtos'))
 
-    return redirect(url_for('admin_dashboard'))
 @app.route('/admin/produtos/adicionar', methods=['GET', 'POST'])
 @admin_required
 def admin_add_product():
@@ -760,7 +750,89 @@ def enviar_contato_form():
     except Exception as e:
         print(f'Erro detalhado: {e}')
         return jsonify({'error': 'Erro ao enviar mensagem'}), 500
-#SERVICOS
+#SERVICOS e EMAIL DO SERVICO HTML
+@app.route('/enviar-serviço', methods=['POST'])
+def enviar_servico_form():
+    try:
+        # Captura os dados enviados pelo formulário
+        dados = {
+            'nome': request.json.get('nome', '').strip(),
+            'email': request.json.get('email', '').strip(),
+            'telefone': request.json.get('telefone', '').strip(),
+            'categoria': request.json.get('categoria', '').strip(),
+            'mensagem': request.json.get('mensagem', '').strip(),
+            'data': datetime.now().strftime('%d/%m/%Y às %H:%M')
+        }
+
+        # Verifica se os campos obrigatórios estão preenchidos
+        if not dados['nome'] or not dados['email'] or not dados['mensagem']:
+            return jsonify({'error': 'Os campos Nome, Email e Mensagem são obrigatórios.'}), 400
+
+        # Mapeia categorias para nomes completos
+        categorias = {
+            'locacao': 'Locação de Equipamentos',
+            'manutencao': 'Manutenção de Equipamentos',
+            'projetos': 'Projetos Técnicos',
+            'legalizacao': 'Legalização junto à ANATEL',
+            'implantacao': 'Implantação de Sistemas'
+        }
+        categoria_nome = categorias.get(dados['categoria'], 'Categoria não especificada')
+
+        # Cria o conteúdo do e-mail em HTML para o cliente
+        html_content_cliente = f"""
+        <html>
+            <body>
+                <h2>Solicitação de Serviço Recebida - TecPoint</h2>
+                <p><strong>Prezado(a) {dados['nome']},</strong></p>
+                <p>Agradecemos pelo seu contato! Recebemos a sua solicitação para o serviço abaixo:</p>
+                <p><strong>Categoria do Serviço:</strong> {categoria_nome}</p>
+                <p><strong>Telefone:</strong> {dados['telefone'] or 'Não informado'}</p>
+                <p><strong>Email:</strong> {dados['email']}</p>
+                <p><strong>Mensagem:</strong><br>{dados['mensagem']}</p>
+                <p>Em breve, nossa equipe entrará em contato com você pelo telefone ou e-mail informado:</p>
+                <p>Atenciosamente,<br>Equipe TecPoint</p>
+                <p><em>Recebido em {dados['data']}</em></p>
+            </body>
+        </html>
+        """
+
+        # Cria o conteúdo do e-mail em HTML para a empresa
+        html_content_empresa = f"""
+        <html>
+            <body>
+                <h2>Nova Solicitação de Serviço - TecPoint</h2>
+                <p><strong>Nome do Cliente:</strong> {dados['nome']}</p>
+                <p><strong>Email do Cliente:</strong> {dados['email']}</p>
+                <p><strong>Telefone:</strong> {dados['telefone'] or 'Não informado'}</p>
+                <p><strong>Categoria do Serviço:</strong> {categoria_nome}</p>
+                <p><strong>Mensagem do Cliente:</strong><br>{dados['mensagem']}</p>
+                <p><em>Recebido em {dados['data']}</em></p>
+            </body>
+        </html>
+        """
+
+        # Envia o e-mail para o cliente
+        cliente_email_sucesso = send_email(
+            subject='Confirmação de Solicitação de Serviço - TecPoint',
+            html_content=html_content_cliente,
+            to_email=dados['email']
+        )
+
+        # Envia o e-mail para a empresa
+        empresa_email_sucesso = send_email(
+            subject='Nova Solicitação de Serviço - TecPoint',
+            html_content=html_content_empresa,
+            to_email=SMTP_USERNAME  # Enviado para o e-mail da empresa
+        )
+
+        if cliente_email_sucesso and empresa_email_sucesso:
+            return jsonify({'message': 'Mensagem enviada com sucesso!'}), 200
+        else:
+            return jsonify({'error': 'Erro ao enviar mensagem. Por favor, tente novamente.'}), 500
+
+    except Exception as e:
+        print(f'Erro detalhado: {e}')
+        return jsonify({'error': 'Ocorreu um erro ao processar sua solicitação. Por favor, tente novamente.'}), 500
 # ------------------------------------------------------------------------
 @app.route('/admin/servicos/adicionar', methods=['GET', 'POST'])
 @admin_required
@@ -840,24 +912,25 @@ def admin_edit_service(id):
         description = request.form.get('description', '').strip()
         category = request.form.get('category', '').strip()
         features = request.form.getlist('features[]')
+        current_tab = request.form.get('current_tab', 'servicos')  # Aba ativa
 
         if not all([name, description, category]):
-            flash('Preencha todos os campos obrigatórios')
-            return redirect(url_for('admin_dashboard'))
+            flash('Preencha todos os campos obrigatórios', 'error')
+            return redirect(url_for('admin_dashboard', tab=current_tab))
 
         # Limpa e valida features
         features = [f.strip() for f in features if f.strip()]
         if not features:
-            flash('Adicione pelo menos uma característica')
-            return redirect(url_for('admin_dashboard'))
+            flash('Adicione pelo menos uma característica', 'error')
+            return redirect(url_for('admin_dashboard', tab=current_tab))
 
-        # Trata imagem se fornecida
+        # Processa imagem, se fornecida
         if 'image' in request.files:
             file = request.files['image']
             if file and file.filename:
                 if not validate_image(file):
-                    flash('Imagem inválida ou muito grande')
-                    return redirect(url_for('admin_dashboard'))
+                    flash('Imagem inválida ou muito grande', 'error')
+                    return redirect(url_for('admin_dashboard', tab=current_tab))
                 
                 try:
                     # Salva nova imagem
@@ -871,12 +944,12 @@ def admin_edit_service(id):
                         if old_image:
                             delete_file(old_image)
                     else:
-                        flash('Erro ao salvar nova imagem')
-                        return redirect(url_for('admin_dashboard'))
+                        flash('Erro ao salvar nova imagem', 'error')
+                        return redirect(url_for('admin_dashboard', tab=current_tab))
                 except Exception as e:
                     print(f"Erro ao processar imagem: {e}")
-                    flash('Erro ao processar imagem')
-                    return redirect(url_for('admin_dashboard'))
+                    flash('Erro ao processar imagem', 'error')
+                    return redirect(url_for('admin_dashboard', tab=current_tab))
 
         # Atualiza dados do serviço
         service.name = name
@@ -885,14 +958,15 @@ def admin_edit_service(id):
         service.features = json.dumps(features)
 
         db.session.commit()
-        flash('Serviço atualizado com sucesso!')
+        flash('Serviço atualizado com sucesso!', 'success')
+        return redirect(url_for('admin_dashboard', tab=current_tab))  # Retorna à aba ativa
 
     except Exception as e:
         db.session.rollback()
         print(f"Erro ao atualizar serviço: {e}")
-        flash('Erro ao atualizar serviço')
+        flash('Erro ao atualizar serviço', 'error')
+        return redirect(url_for('admin_dashboard', tab='servicos'))
 
-    return redirect(url_for('admin_dashboard'))
 @app.route('/admin/servicos/excluir/<int:id>', methods=['POST'])
 @admin_required
 def admin_delete_service(id):
