@@ -8,6 +8,7 @@
     <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='LogoTecPoint.png') }}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/index.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/loadinginstagram.css') }}">
 
 </head>
 
@@ -53,17 +54,30 @@
 
     <!-- Instagram Section -->
     <section class="instagram-section">
-        <div class="section-header">
-            <h2>Últimas Novidades</h2>
-            <p>Acompanhe nosso Instagram</p>
-        </div>
-        <div class="instagram-feed">
-            <div class="loading-placeholder">
-                <p>Carregando feed do Instagram...</p>
+        <h2 class="section-title">Últimas Novidades</h2>
+        <p class="section-subtitle">Acompanhe nosso Instagram</p>
+        
+        <div class="instagram-container">
+            <!-- Placeholder de loading -->
+            <div class="loading-placeholder" id="loadingPlaceholder">
+                <div class="placeholder-header">
+                    <div class="placeholder-circle"></div>
+                    <div class="placeholder-lines">
+                        <div class="placeholder-line"></div>
+                        <div class="placeholder-line"></div>
+                    </div>
+                </div>
+                <div style="height: 540px; background: #2a2a2a;"></div>
             </div>
-            <blockquote class="instagram-media" data-instgrm-permalink="https://www.instagram.com/tecpointmt/"
-                data-instgrm-version="14"></blockquote>
-            <script async src="//www.instagram.com/embed.js"></script>
+    
+            <!-- Conteúdo real do Instagram -->
+            <div class="instagram-content" id="instagramContent">
+                <blockquote 
+                    class="instagram-media" 
+                    data-instgrm-permalink="https://www.instagram.com/tecpointmt/"
+                    data-instgrm-version="14">
+                </blockquote>
+            </div>
         </div>
     </section>
 
@@ -106,16 +120,19 @@
                 <h2>Envie sua Mensagem</h2>
                 <form id="contactForm" onsubmit="return sendContactEmail(event)">
                     <div class="form-group">
-                        <input type="text" id="contact_name" name="name" class="form-input" placeholder="Seu Nome" required>
+                        <input type="text" id="contact_name" name="name" class="form-input" placeholder="Seu Nome"
+                            required>
                     </div>
                     <div class="form-group">
-                        <input type="email" id="contact_email" name="email" class="form-input" placeholder="Seu Email" required>
+                        <input type="email" id="contact_email" name="email" class="form-input" placeholder="Seu Email"
+                            required>
                     </div>
                     <div class="form-group">
                         <input type="tel" id="contact_phone" name="phone" class="form-input" placeholder="Seu Telefone">
                     </div>
                     <div class="form-group">
-                        <textarea id="contact_message" name="message" class="form-input" rows="4" placeholder="Sua Mensagem" required></textarea>
+                        <textarea id="contact_message" name="message" class="form-input" rows="4"
+                            placeholder="Sua Mensagem" required></textarea>
                     </div>
                     <button type="submit" class="button button-primary" id="submitButton">
                         <span class="button-text">Enviar Mensagem</span>
@@ -173,14 +190,16 @@
             <div class="footer-section">
                 <h3>Redes Sociais</h3>
                 <div class="social-links">
-                    <a href="https://www.facebook.com/tecpointmt/?locale=pt_BR" target="_blank"rel="noopener" title="Facebook">
+                    <a href="https://www.facebook.com/tecpointmt/?locale=pt_BR" target="_blank" rel="noopener"
+                        title="Facebook">
                         <i class="fab fa-facebook"></i>
                     </a>
-                    <a href="https://www.instagram.com/tecpointmt/" target="_blank"rel="noopener" title="Instagram">
+                    <a href="https://www.instagram.com/tecpointmt/" target="_blank" rel="noopener" title="Instagram">
 
                         <i class="fab fa-instagram"></i>
                     </a>
-                    <a href="https://www.linkedin.com/company/tecpoint-mt/posts/?feedView=all" target="_blank"rel="noopener" title="LinkedIn">
+                    <a href="https://www.linkedin.com/company/tecpoint-mt/posts/?feedView=all" target="_blank"
+                        rel="noopener" title="LinkedIn">
                         <i class="fab fa-linkedin"></i>
                     </a>
                     <a href="https://wa.me/5565999772110" target="_blank" rel="noopener" title="WhatsApp">
@@ -193,7 +212,7 @@
             <p>&copy; 2024 TecPoint. Todos os direitos reservados.</p>
         </div>
     </footer>
+    <script src="{{ url_for('static', filename='js/loadinginstagram.js') }}"></script>
     <script src="{{ url_for('static', filename='js/index.js') }}"></script>
 </body>
-
 </html>

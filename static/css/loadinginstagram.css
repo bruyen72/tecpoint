@@ -1,0 +1,367 @@
+/* Instagram Section - Compacted and Responsive */
+:root {
+    --transition-smooth: cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-bounce: cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+@keyframes sectionFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+        filter: blur(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+        filter: blur(0);
+    }
+}
+
+@keyframes softPulse {
+    0%, 100% { 
+        transform: scale(1); 
+    }
+    50% { 
+        transform: scale(1.015); 
+    }
+}
+
+@keyframes shimmerAdvanced {
+    0% {
+        background-position: -1000px 0;
+        opacity: 0.6;
+    }
+    50% {
+        opacity: 0.8;
+    }
+    100% {
+        background-position: 1000px 0;
+        opacity: 0.6;
+    }
+}
+
+@keyframes gradientFlow {
+    0% {
+        background-position: -200% 0;
+    }
+    100% {
+        background-position: 200% 0;
+    }
+}
+
+.instagram-section {
+    padding: 3rem 1rem; /* Reduced padding */
+    background: var(--darker);
+    position: relative;
+    min-height: 300px; /* Reduced minimum height */
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    overflow: hidden;
+    perspective: 1000px; /* Added for 3D effects */
+    will-change: transform, opacity;
+    animation: sectionFadeIn 1.2s var(--transition-smooth) forwards;
+    opacity: 0;
+    transform: translateY(30px);
+}
+
+/* Header with titles */
+.instagram-header {
+    max-width: 1200px; /* Reduced max-width */
+    margin: 0 auto 2rem; /* Reduced bottom margin */
+    position: relative;
+    width: 100%;
+    transition: all 0.5s var(--transition-smooth);
+    will-change: transform;
+}
+
+.instagram-header:hover {
+    transform: scale(1.01) translateZ(10px);
+}
+
+/* Main Title */
+.section-title {
+    font-size: 2rem; /* Slightly smaller font size */
+    margin-bottom: 1rem; /* Reduced margin */
+    color: var(--light);
+    position: relative;
+    display: inline-block;
+    padding-bottom: 0.75rem; /* Reduced padding */
+    transition: all 0.3s var(--transition-smooth);
+    will-change: color, transform;
+}
+
+.section-title:hover {
+    color: var(--accent);
+    transform: translateY(-3px);
+}
+
+/* Decorative title line with hover animation */
+.section-title::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    width: 50px; /* Slightly shorter line */
+    height: 2px; /* Thinner line */
+    background: var(--gradient);
+    transform: translateX(-50%) scaleX(0);
+    transform-origin: center;
+    transition: transform 0.4s var(--transition-smooth);
+    border-radius: 2px;
+}
+
+.section-title:hover::after {
+    transform: translateX(-50%) scaleX(1);
+}
+
+/* Subtitle */
+.section-subtitle {
+    color: var(--accent);
+    font-size: 1rem; /* Reduced font size */
+    opacity: 0.9;
+    margin: 0 auto 1.5rem; /* Reduced margin */
+    max-width: 700px; /* Slightly reduced width */
+    transition: all 0.3s var(--transition-smooth);
+    will-change: opacity, transform;
+}
+
+.section-subtitle:hover {
+    opacity: 1;
+    transform: translateY(-2px);
+}
+
+/* Instagram Container */
+.instagram-container {
+    max-width: 1200px; /* Reduced max-width */
+    width: 100%;
+    margin: 0 auto;
+    position: relative;
+    min-height: 600px; /* Reduced minimum height */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transition: all 0.5s var(--transition-smooth);
+    will-change: transform, box-shadow;
+}
+
+.instagram-container:hover {
+    transform: translateY(-12px) scale(1.005);
+    box-shadow: 0 15px 30px rgba(0,0,0,0.15);
+}
+
+/* Loading Placeholder with Advanced Shimmer Effect */
+.loading-placeholder {
+    position: absolute;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 100%;
+    max-width: 900px; /* Reduced max-width */
+    background: var(--dark);
+    border-radius: 10px; /* Slightly smaller border radius */
+    overflow: hidden;
+    opacity: 1;
+    transition: opacity 0.3s var(--transition-smooth);
+    border: 1px solid var(--border-color);
+    height: 650px; /* Reduced height */
+    background: linear-gradient(
+        90deg, 
+        var(--darker) 0%, 
+        var(--dark) 50%, 
+        var(--darker) 100%
+    );
+    background-size: 1000px 100%;
+    animation: shimmerAdvanced 2.5s infinite linear;
+    will-change: background-position, opacity;
+}
+
+.placeholder-header {
+    height: 50px; /* Reduced height */
+    background: var(--darker);
+    margin-bottom: 1px;
+    display: flex;
+    align-items: center;
+    padding: 0 12px; /* Reduced padding */
+    border-bottom: 1px solid var(--border-color);
+}
+
+.placeholder-circle {
+    width: 35px; /* Slightly smaller */
+    height: 35px;
+    border-radius: 50%;
+    background: linear-gradient(
+        45deg, 
+        var(--primary) 0%, 
+        color-mix(in srgb, var(--primary) 80%, white) 100%
+    );
+    position: relative;
+    overflow: hidden;
+    animation: softPulse 2s infinite var(--transition-bounce);
+    will-change: transform;
+}
+
+.placeholder-lines {
+    flex: 1;
+    margin-left: 10px; /* Reduced margin */
+}
+
+.placeholder-line {
+    height: 10px; /* Slightly smaller */
+    background: linear-gradient(
+        90deg, 
+        var(--primary) 0%, 
+        color-mix(in srgb, var(--primary) 70%, white) 50%, 
+        var(--primary) 100%
+    );
+    margin: 5px 0;
+    border-radius: 4px;
+    position: relative;
+    overflow: hidden;
+    opacity: 0.7;
+    animation: gradientFlow 3s infinite linear;
+    will-change: background-position;
+}
+
+/* Instagram Media with Refined Hover Effect */
+.instagram-media {
+    background: white !important;
+    border: none !important;
+    border-radius: 12px !important; /* Slightly smaller radius */
+    box-shadow: var(--shadow) !important;
+    margin: 0 auto !important;
+    max-width: 1200px !important; /* Reduced max-width */
+    min-width: 900px !important; /* Reduced minimum width */
+    width: 100% !important;
+    transition: all 0.4s var(--transition-smooth);
+    will-change: transform, box-shadow;
+    perspective: 1000px;
+}
+
+.instagram-media:hover {
+    transform: scale(1.02) rotateX(2deg);
+    box-shadow: 0 20px 40px rgba(0,0,0,0.12) !important;
+}
+
+/* Error State with Interactive Button */
+.instagram-error {
+    text-align: center;
+    padding: 1.5rem; /* Reduced padding */
+    background: rgba(0, 168, 89, 0.05);
+    border-radius: 12px; /* Slightly smaller radius */
+    border: 1px solid var(--border-color);
+    color: var(--light);
+    max-width: 1200px; /* Reduced max-width */
+    width: 100%;
+    margin: 1.5rem auto 0; /* Reduced margin */
+    transition: all 0.3s var(--transition-smooth);
+    will-change: transform, box-shadow;
+}
+
+.instagram-error:hover {
+    transform: translateY(-7px) rotate(0.5deg);
+    box-shadow: 0 7px 20px rgba(0,0,0,0.12);
+}
+
+.instagram-error a {
+    display: inline-block;
+    margin-top: 0.75rem; /* Reduced margin */
+    padding: 0.5rem 1.25rem; /* Slightly smaller padding */
+    background: var(--gradient);
+    color: var(--text-dark);
+    text-decoration: none;
+    border-radius: 6px; /* Slightly smaller radius */
+    font-weight: 500;
+    transition: all 0.3s var(--transition-smooth);
+    position: relative;
+    overflow: hidden;
+    will-change: transform, box-shadow;
+}
+
+.instagram-error a::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(120deg, transparent, rgba(255,255,255,0.3), transparent);
+    transition: all 0.5s var(--transition-smooth);
+}
+
+.instagram-error a:hover::before {
+    left: 100%;
+}
+
+.instagram-error a:hover {
+    transform: scale(1.05);
+    box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+}
+
+/* Media Queries (Kept Original) */
+@media (max-width: 1650px) {
+    .instagram-container,
+    .instagram-content,
+    .instagram-media,
+    .instagram-header,
+    .loading-placeholder {
+        max-width: 95vw !important;
+    }
+
+    .instagram-media {
+        min-width: unset !important;
+    }
+}
+
+@media (max-width: 768px) {
+    .instagram-section {
+        padding: 2.5rem 0.75rem; /* Further reduced padding */
+        animation: sectionFadeIn 0.8s var(--transition-smooth) forwards;
+    }
+    
+    .section-title {
+        font-size: 1.75rem; /* Smaller on mobile */
+    }
+    
+    .instagram-container {
+        min-height: 500px; /* Reduced height */
+    }
+
+    .loading-placeholder {
+        height: 500px;
+    }
+
+    .instagram-media {
+        min-width: 100% !important; /* Full width on mobile */
+    }
+}
+
+@media (max-width: 480px) {
+    .instagram-section {
+        padding: 2rem 0.5rem; /* Minimal padding */
+        animation: sectionFadeIn 0.6s var(--transition-smooth) forwards;
+    }
+
+    .section-title {
+        font-size: 1.5rem; /* Even smaller */
+    }
+    
+    .section-subtitle {
+        font-size: 0.9rem; /* Smaller subtitle */
+    }
+
+    .instagram-container {
+        min-height: 400px; /* Further reduced height */
+    }
+
+    .loading-placeholder {
+        height: 400px;
+    }
+    
+    .instagram-error {
+        margin: 1rem auto;
+        padding: 1rem;
+    }
+}
