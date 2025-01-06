@@ -171,6 +171,9 @@ body {
 .solucoes-hero p {
     font-size: 1.2rem;
     color: var(--accent);
+    white-space: pre-line;         /* Preserva quebras de linha */
+    word-wrap: break-word;         /* Quebra palavras longas */
+    line-height: 1.8;
 }
 
 /* Grid de Soluções */
@@ -183,70 +186,146 @@ body {
 
 .solucao-card {
     background: white;
-    border-radius: 15px;
+    border-radius: 20px;
     overflow: hidden;
     box-shadow: var(--shadow);
     margin-bottom: 3rem;
-    transition: transform 0.3s ease;
+    transition: all 0.4s ease;
+    border: 1px solid rgba(0, 168, 89, 0.1);
 }
 
 .solucao-card:hover {
     transform: translateY(-5px);
+    box-shadow: 0 15px 30px rgba(0, 168, 89, 0.15);
 }
 
 .solucao-content {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 3rem;
-    padding: 3rem;
-    align-items: center;
+    padding: 2.5rem;
+    align-items: flex-start;
+    position: relative;
 }
 
 .solucao-imagem {
     background: var(--gray);
     padding: 2rem;
-    border-radius: 10px;
-    height: 600px;
+    border-radius: 15px;
+    height: 500px;
     display: flex;
     align-items: center;
     justify-content: center;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.solucao-imagem::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.solucao-card:hover .solucao-imagem::after {
+    opacity: 1;
 }
 
 .solucao-imagem img {
-    max-width: 100%;
-    max-height: 100%;
+    max-width: 90%;
+    max-height: 90%;
     object-fit: contain;
+    transition: transform 0.3s ease;
+}
+
+.solucao-card:hover .solucao-imagem img {
+    transform: scale(1.05);
+}
+
+.solucao-texto {
+    padding-right: 1rem;
 }
 
 .solucao-texto h3 {
     color: var(--primary);
     font-size: 1.8rem;
-    margin-bottom: 1rem;
+    margin-bottom: 1.5rem;
+    position: relative;
+    padding-bottom: 1rem;
+}
+
+.solucao-texto h3::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 60px;
+    height: 3px;
+    background: var(--accent);
+    border-radius: 2px;
 }
 
 .solucao-texto p {
     color: var(--text-gray);
     margin-bottom: 1.5rem;
     font-size: 1.1rem;
+    line-height: 1.8;
+    max-height: 280px;
+    overflow-y: auto;
+    padding-right: 1rem;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+}
+
+.solucao-texto p::-webkit-scrollbar {
+    width: 6px;
+}
+
+.solucao-texto p::-webkit-scrollbar-thumb {
+    background: var(--primary);
+    border-radius: 3px;
 }
 
 .solucao-features {
     list-style: none;
-    margin-bottom: 2rem;
+    margin: 2rem 0;
+    padding: 1rem;
+    background: var(--gray);
+    border-radius: 12px;
 }
 
 .solucao-features li {
     display: flex;
     align-items: center;
-    gap: 0.8rem;
-    margin-bottom: 1rem;
+    gap: 1rem;
+    padding: 0.8rem;
     color: var(--text-dark);
+    white-space: pre-line;
+    word-wrap: break-word;
+    transition: all 0.3s ease;
+    border-radius: 8px;
+}
+
+.solucao-features li:hover {
+    background: rgba(0, 168, 89, 0.1);
+    transform: translateX(5px);
 }
 
 .solucao-features i {
     color: var(--primary);
     font-size: 1.2rem;
+    background: white;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    box-shadow: 0 2px 5px rgba(0, 168, 89, 0.2);
 }
+
 
 .button {
     display: inline-block;
@@ -322,6 +401,8 @@ body {
 .footer-section p {
     color: black;
     margin-bottom: 1rem;
+    white-space: pre-line;         /* Preserva quebras de linha */
+    word-wrap: break-word;         /* Quebra palavras longas */
 }
 
 .footer-section ul {
@@ -459,7 +540,8 @@ body {
     display: block;
     margin-bottom: 0.5rem;
     font-weight: bold;
-    color: var(--text-dark, #222);
+    color: var(--text-dark);
+    white-space: pre-line;         /* Preserva quebras de linha */
 }
 
 .form-control {
@@ -469,7 +551,9 @@ body {
     border-radius: 5px;
     font-size: 1rem;
     transition: border-color 0.3s ease, box-shadow 0.3s ease;
+    font-family: inherit;          /* Mantém a fonte consistente */
 }
+
 
 .form-control:focus {
     border-color: var(--primary, #00A859);

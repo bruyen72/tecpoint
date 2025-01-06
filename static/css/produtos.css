@@ -338,7 +338,6 @@ body {
     background: white;
     padding: 4rem 2rem 2rem;
     border-top: 1px solid var(--border-color);
-    margin-top: 4rem;
 }
 
 .footer-content {
@@ -359,11 +358,11 @@ body {
 }
 
 .footer-tecpoint-logo img {
-    height: var(--max-logo-height);
+    height: var(--max-logo-height, 160px);
     width: auto;
-    display: block;
-    margin-bottom: 1rem;
+    min-width: var(--logo-min-width, 20mm);
 }
+
 
 .footer-tecpoint-logo img {
     height: var(--max-logo-height, 160px);
@@ -372,14 +371,13 @@ body {
 }
 
 .footer-wings-logo {
-    display: block;
-    margin-top: 1rem;
+    margin-bottom: 1rem;
+    margin-left: 0;
 }
 
 .footer-wings-logo img {
-    height: calc(var(--max-logo-height) * var(--partner-logo-scale));
+    height: calc(var(--max-logo-height)*var(--partner-logo-scale));
     width: auto;
-    min-width: var(--logo-min-width);
 }
 
 .footer-section h3 {
