@@ -53,7 +53,7 @@
         </div>
     </section>
 
-    <section class="produtos-grid-section">
+    <section class="produtos-grid-section {% if products|length == 1 %}single-product{% endif %}">
         <div class="produtos-grid">
             {% for product in products %}
             <div class="produto-card" data-category="{{ product.category }}">
