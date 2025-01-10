@@ -475,7 +475,7 @@ def admin_edit_product(id):
                 if new_pdf:
                     product.pdf_path = new_pdf
 
-        # Imagens adicionais
+        # Imagens adicionais varias
         if 'images' in request.files:
             additional_files = request.files.getlist('images')
             new_images = []
