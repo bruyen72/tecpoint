@@ -986,6 +986,87 @@ def admin_delete_service(id):
     
     return redirect(url_for('admin_dashboard'))
 
+@app.route('/admin/produtos/excluir-imagem/<int:id>', methods=['POST'])
+@admin_required
+def admin_delete_product_image(id):
+    product = Product.query.get_or_404(id)
+    try:
+        if product.image_path:
+            delete_file(product.image_path)
+            product.image_path = ""  # Set to empty string instead of None
+
+        # Handle multiple images
+        if product.image_paths:
+            try:
+                images = json.loads(product.image_paths)
+                if images:
+                    # Delete the first image (main image)
+                    if images:
+                        delete_file(images[0])
+                        images.pop(0)
+                    product.image_paths = json.dumps(images) if images else None
+            except json.JSONDecodeError as e:
+                print(f"Erro ao decodificar image_paths: {e}")
+                return jsonify({'error': 'Erro ao processar imagens'}), 500
+
+        db.session.commit()
+        return jsonify({'message': 'Imagem excluída com sucesso!'}), 200
+
+    except Exception as e:
+        db.session.rollback()
+        print(f"Erro ao excluir imagem: {e}")
+        return jsonify({'error': 'Erro ao excluir imagem'}), 500
+
+@app.route('/admin/produtos/excluir-imagem-adicional/<int:id>', methods=['POST'])
+@admin_required
+def admin_delete_additional_product_image(id):
+    product = Product.query.get_or_404(id)
+    try:
+        data = request.get_json()
+        image_path = data.get('image_path')
+
+        if not image_path:
+            return jsonify({'error': 'Caminho da imagem não fornecido'}), 400
+
+        if product.image_paths:
+            try:
+                images = json.loads(product.image_paths)
+                if image_path in images:
+                    delete_file(image_path)
+                    images.remove(image_path)
+                    product.image_paths = json.dumps(images) if images else None
+                    db.session.commit()
+                    return jsonify({'message': 'Imagem adicional excluída com sucesso!'}), 200
+                else:
+                    return jsonify({'error': 'Imagem não encontrada na lista de imagens adicionais'}), 404
+            except json.JSONDecodeError as e:
+                print(f"Erro ao decodificar image_paths: {e}")
+                return jsonify({'error': 'Erro ao processar imagens'}), 500
+        else:
+            return jsonify({'error': 'Produto não possui imagens adicionais'}), 404
+
+    except Exception as e:
+        db.session.rollback()
+        print(f"Erro ao excluir imagem adicional: {e}")
+        return jsonify({'error': 'Erro ao excluir imagem adicional'}), 500
+
+@app.route('/admin/produtos/excluir-pdf/<int:id>', methods=['POST'])
+@admin_required
+def admin_delete_product_pdf(id):
+    product = Product.query.get_or_404(id)
+    try:
+        if product.pdf_path:
+            delete_file(product.pdf_path)
+            product.pdf_path = ""
+            db.session.commit()
+            return jsonify({'message': 'PDF excluído com sucesso!'}), 200
+        else:
+            return jsonify({'error': 'Produto não possui PDF'}), 404
+    except Exception as e:
+        db.session.rollback()
+        print(f"Erro ao excluir PDF: {e}")
+        return jsonify({'error': 'Erro ao excluir PDF'}), 500
+
 # ------------------------------------------------------------------------
 
 if __name__ == '__main__':

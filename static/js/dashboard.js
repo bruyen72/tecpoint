@@ -115,6 +115,103 @@ window.onclick = function (event) {
     if (event.target.id === 'modalEdicaoServico') fecharModalServico();
 };
 
+let currentProductId = null;
+
+function abrirModalExcluirImagem(productId) {
+    currentProductId = productId;
+    document.getElementById('modalExcluirImagem').style.display = 'block';
+}
+
+function fecharModalExcluirImagem() {
+    document.getElementById('modalExcluirImagem').style.display = 'none';
+    currentProductId = null;
+}
+
+function confirmarExcluirImagem() {
+    if (currentProductId) {
+        fetch(`/admin/produtos/excluir-imagem/${currentProductId}`, {
+            method: 'POST',
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Erro ao excluir imagem.');
+            }
+            // Reload the page or update the UI as needed
+            window.location.reload();
+        })
+        .catch(error => {
+            console.error(error);
+            alert('Erro ao excluir imagem. Tente novamente.');
+        });
+    }
+    fecharModalExcluirImagem();
+}
+
+let currentAdditionalImage = null;
+
+function abrirModalExcluirImagemAdicional(productId, imagePath) {
+    currentProductId = productId;
+    currentAdditionalImage = imagePath;
+    document.getElementById('modalExcluirImagem').style.display = 'block';
+}
+
+function confirmarExcluirImagemAdicional() {
+     if (currentProductId && currentAdditionalImage) {
+        fetch(`/admin/produtos/excluir-imagem-adicional/${currentProductId}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ image_path: currentAdditionalImage }),
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Erro ao excluir imagem adicional.');
+            }
+            // Reload the page or update the UI as needed
+            window.location.reload();
+        })
+        .catch(error => {
+            console.error(error);
+            alert('Erro ao excluir imagem adicional. Tente novamente.');
+        });
+    }
+    fecharModalExcluirImagem();
+}
+
+let currentPdfPath = null;
+
+function abrirModalExcluirPdf(productId) {
+    currentProductId = productId;
+    document.getElementById('modalExcluirPdf').style.display = 'block';
+}
+
+function fecharModalExcluirPdf() {
+    document.getElementById('modalExcluirPdf').style.display = 'none';
+    currentProductId = null;
+}
+
+function confirmarExcluirPdf() {
+    if (currentProductId) {
+        fetch(`/admin/produtos/excluir-pdf/${currentProductId}`, {
+            method: 'POST',
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Erro ao excluir PDF.');
+            }
+            // Reload the page or update the UI as needed
+            window.location.reload();
+        })
+        .catch(error => {
+            console.error(error);
+            alert('Erro ao excluir PDF. Tente novamente.');
+        });
+    }
+    fecharModalExcluirPdf();
+}
+
+
 // Inicializar página
 window.onload = function () {
     const urlParams = new URLSearchParams(window.location.search);

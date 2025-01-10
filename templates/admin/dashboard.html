@@ -60,10 +60,13 @@
                             <button onclick="editarItem('produto', '{{ product.id }}')" class="button button-primary">
                                 <i class="fas fa-edit"></i> Editar
                             </button>
+                            <button onclick="abrirModalExcluirImagem('{{ product.id }}')" class="button button-danger">
+                                <i class="fas fa-trash"></i> Excluir Imagem do Produto principal
+                            </button>
                             <form method="POST" action="{{ url_for('admin_delete_product', id=product.id) }}"
                                 onsubmit="return confirm('Tem certeza que deseja excluir este produto?');">
                                 <button type="submit" class="button button-danger">
-                                    <i class="fas fa-trash"></i> Excluir
+                                    <i class="fas fa-trash"></i> Excluir Produto
                                 </button>
                             </form>
                             {% if product.pdf_path %}
@@ -71,8 +74,25 @@
                                 class="button button-outline" target="_blank">
                                 <i class="fas fa-file-pdf"></i> Ver PDF
                             </a>
+                            {% if product.pdf_path %}
+                            <button onclick="abrirModalExcluirPdf('{{ product.id }}')" class="button button-danger">
+                                <i class="fas fa-trash"></i> Excluir PDF
+                            </button>
+                            {% endif %}
                             {% endif %}
                         </div>
+                        {% if product.image_paths %}
+                        <div class="additional-images">
+                            {% for image_path in product.image_paths|json_loads %}
+                            <div class="additional-image-container">
+                                <img src="{{ url_for('uploaded_file', filename=image_path) }}" alt="Imagem Adicional">
+                                <button onclick="abrirModalExcluirImagemAdicional('{{ product.id }}', '{{ image_path }}')" class="button button-danger">
+                                    <i class="fas fa-trash"></i> Excluir
+                                </button>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
                     </div>
                 </div>
                 {% endfor %}
@@ -233,6 +253,32 @@
                             class="button button-outline">Cancelar</button>
                     </div>
                 </form>
+            </div>
+        </div>
+
+        <!-- Modal de Confirmação de Exclusão de Imagem -->
+        <div class="modal" id="modalExcluirImagem">
+            <div class="modal-content">
+                <button class="modal-close" onclick="fecharModalExcluirImagem()">&times;</button>
+                <h3>Confirmar Exclusão de Imagem</h3>
+                <p>Tem certeza que deseja excluir esta imagem?</p>
+                <div class="modal-actions">
+                    <button type="button" class="button button-danger" onclick="confirmarExcluirImagem()">Excluir</button>
+                    <button type="button" class="button button-outline" onclick="fecharModalExcluirImagem()">Cancelar</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal de Confirmação de Exclusão de PDF -->
+        <div class="modal" id="modalExcluirPdf">
+            <div class="modal-content">
+                <button class="modal-close" onclick="fecharModalExcluirPdf()">&times;</button>
+                <h3>Confirmar Exclusão de PDF</h3>
+                <p>Tem certeza que deseja excluir este PDF?</p>
+                <div class="modal-actions">
+                    <button type="button" class="button button-danger" onclick="confirmarExcluirPdf()">Excluir</button>
+                    <button type="button" class="button button-outline" onclick="fecharModalExcluirPdf()">Cancelar</button>
+                </div>
             </div>
         </div>
     </main>

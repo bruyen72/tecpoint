@@ -94,8 +94,8 @@ body {
 /* Cards Grid */
 .grid-container {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-    gap: 2rem;
+    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+    gap: 3rem;
 }
 
 .card {
@@ -104,6 +104,7 @@ body {
     overflow: hidden;
     box-shadow: var(--shadow);
     transition: transform 0.3s;
+    border: 1px solid var(--border-color);
 }
 
 .card:hover {
@@ -111,28 +112,68 @@ body {
 }
 
 .card-image {
-    height: 200px;
+    height: 250px;
     background: var(--gray);
     display: flex;
     align-items: center;
     justify-content: center;
     padding: 1rem;
+    overflow: hidden;
 }
 
 .card-image img {
     max-width: 100%;
     max-height: 100%;
     object-fit: contain;
+    transition: transform 0.3s;
+}
+
+.card:hover .card-image img {
+    transform: scale(1.1);
 }
 
 .card-info {
-    padding: 1.5rem;
+    padding: 1.5rem 1rem;
 }
 
 .card-actions {
     display: flex;
     gap: 0.5rem;
     margin-top: 1rem;
+}
+
+.additional-images {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.additional-image-container {
+    position: relative;
+    width: 100px;
+    height: 100px;
+    border: 1px solid var(--border-color);
+    border-radius: 5px;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.additional-image-container img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+}
+
+.additional-image-container button {
+    position: absolute;
+    top: 0;
+    right: 0;
+    padding: 0.2rem 0.4rem;
+    font-size: 0.7rem;
+    border-radius: 0 0 0 5px;
 }
 
 /* Buttons */
