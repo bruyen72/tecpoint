@@ -35,6 +35,7 @@
                 {% set all_images = product.image_paths|json_loads if product.image_paths else [product.image_path] %}
                 <img id="mainImage" src="{{ url_for('uploaded_file', filename=all_images[0]) }}"
                     alt="{{ product.name }}">
+                
                 {% if all_images|length > 1 %}
                 <div class="thumbnails">
                     {% for img_path in all_images %}

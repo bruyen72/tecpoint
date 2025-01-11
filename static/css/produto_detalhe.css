@@ -140,8 +140,8 @@ body {
 }
 
 .produto-imagem img {
-    max-width: 90%;             /* Aumentado para 90% */
-    max-height: 90%;            /* Aumentado para 90% */
+    max-width: 100%;
+    max-height: 400px;
     object-fit: contain;
     transition: transform 0.3s ease;
 }
@@ -153,7 +153,7 @@ body {
 .thumbnails {
     margin-top: 1.5rem;
     display: flex;
-    gap: 0.75rem;
+    gap: 1rem;
     overflow-x: auto;
     max-width: 100%;
     padding: 0.5rem;
@@ -171,10 +171,9 @@ body {
 
 .thumbnail {
     flex: 0 0 auto;
-    width: 30mm;              /* Aumentado um pouco */
-    height: 30mm;             /* Aumentado um pouco */
+    width: 55px;
     border: 2px solid transparent;
-    border-radius: 10px;
+    border-radius: 8px;
     overflow: hidden;
     cursor: pointer;
     transition: all 0.3s ease;
@@ -182,7 +181,7 @@ body {
     align-items: center;
     justify-content: center;
     background: #f8f9fa;
-    padding: 0.5rem;
+    padding: 0.3rem;
 }
 
 .produto-info {
